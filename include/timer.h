@@ -4,6 +4,7 @@
 #include<time.h>
 #include<list>
 #include<array>
+#include"server.h"
 #define BUFFER_SIZE 64
 #define SLOT_NUM 60
 #define SI 1
@@ -17,19 +18,24 @@ struct UserData{
 class Timer{
 private:
     int rotation;
+    int position;
     UserData *data;
-    int (*callback)(UserData *data);
+    Server *server;
 public:
-    Timer(int,UserData *,int (UserData *));
+    Timer(int,int,UserData *,Server *server);
     int update();
+    int get_position();
 };
 class TimerWheel{
 private:
     std::array<std::list<Timer>,SLOT_NUM> slots;
     int current;
+    Server *server;
 public:
-    TimerWheel();
-    int add_timer(UserData data,int timeout);
+    TimerWheel(Server *server);
+    int add_timer(UserData *data,int timeout);
+    void remove_timer(Timer *);
     void tick();
 };
+
 #endif

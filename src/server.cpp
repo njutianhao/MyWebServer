@@ -1,4 +1,9 @@
 #include "server.h"
+
+int timeout_callback(UserData *d){
+    return 0;
+}
+
 int setnonblocking(int fd) 
 { 
     int old_opt = fcntl(fd,F_GETFL);
@@ -15,8 +20,12 @@ void addfd(int epfd, int fd)
     setnonblocking(fd);
 }
 
-Server::Server(){
-    
+Server::Server():tw(this){
+    ;
+}
+
+int Server::timeout_func(UserData *data){
+    //TODO:
 }
 
 void Server::start_listen(){

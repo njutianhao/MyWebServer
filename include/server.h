@@ -8,6 +8,7 @@
 #include<fcntl.h>
 #include<errno.h>
 #include<stdio.h>
+#include"timer.h"
 #define MAX_EVENT_NUM 10000
 class Server{
 private:
@@ -17,9 +18,11 @@ private:
     int listenfd;
     int epfd;
     epoll_event event[MAX_EVENT_NUM];
+    TimerWheel tw;
 public:
     Server();
     void start_listen();
     void event_loop();
+    int timeout_func(UserData *);
 };
 #endif
