@@ -1,5 +1,5 @@
 #include"threadpool.h"
-ThreadPool::ThreadPool(){
+ThreadPool::ThreadPool() throw(){
     for(int i = 0; i < THREAD_NUM;i++)
     {
         int ret = pthread_create(threads+i,NULL,start_routine,NULL);
@@ -8,6 +8,7 @@ ThreadPool::ThreadPool(){
     try
     {
         pthread_mutex_init(&mutex,NULL);
+        sem_init(&requests,0,0);
     }
     catch(...){
         throw std::exception();
@@ -27,6 +28,7 @@ void ThreadPool::append(UserData *data){
         queue.push_back(data);
     }
     pthread_mutex_unlock(&mutex);
+    sem_post(&requests);
 }
 
 void * ThreadPool::start_routine(void *p){
@@ -37,7 +39,12 @@ void * ThreadPool::start_routine(void *p){
 
 void ThreadPool::run(){
     while(!stop){
+        sem_wait(&requests);
         pthread_mutex_lock(&mutex);
+        if(queue.empty())
+        {
+            pthread_mutex_unlock(&mutex);
+        }
         UserData *data = queue.front();
         queue.pop_front();
         fd_exist.erase(data->socketfd);

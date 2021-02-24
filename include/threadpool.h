@@ -4,6 +4,7 @@
 #include<list>
 #include"timer.h"
 #include<pthread.h>
+#include<semaphore.h>
 class ThreadPool{
 private:
     std::list<UserData *> queue;
@@ -11,10 +12,11 @@ private:
     const int THREAD_NUM = 8;
     pthread_t *threads;
     pthread_mutex_t mutex;
+    sem_t requests;
     bool stop = false;
     bool exist(int);
 public:
-    ThreadPool();
+    ThreadPool() throw();
     void append(UserData *);
     static void *start_routine(void *);
     void run();
