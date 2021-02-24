@@ -10,7 +10,7 @@ Timer::Timer(int r,int p,UserData* d,Server *s){
 int Timer::update(){
     if(rotation <= 0)
     {
-        (*server).timeout_func(data);
+        (*server).end_connection(this);
         return 1;
     }
     rotation--;
@@ -30,13 +30,14 @@ TimerWheel::TimerWheel(Server *s){
     }
 }
 
-int TimerWheel::add_timer(UserData *data,int timeout){
+Timer TimerWheel::add_timer(UserData *data,int timeout){
     if(timeout < 0)
         return ;
     int ticks = timeout/SI;
     int rotation = ticks / SLOT_NUM;
     int position = ((ticks % SLOT_NUM)+current) % SLOT_NUM;
     slots[position].push_front(Timer(rotation,position,data,server));
+    return slots[position].front();
 }
 
 void TimerWheel::tick(){
@@ -51,6 +52,6 @@ void TimerWheel::tick(){
     current++;
 }
 
-void TimerWheel::remove_timer(Timer *t){
-    slots[t->get_position()].remove(*t);
+void TimerWheel::remove_timer(Timer &t){
+    slots[t.get_position()].remove(t);
 }

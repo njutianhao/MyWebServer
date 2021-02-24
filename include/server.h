@@ -9,7 +9,10 @@
 #include<errno.h>
 #include<stdio.h>
 #include"timer.h"
+#include<map>
+#include<unistd.h>
 #define MAX_EVENT_NUM 10000
+#define TIMEOUT_VAL 180
 class Server{
 private:
     int port;
@@ -19,10 +22,14 @@ private:
     int epfd;
     epoll_event event[MAX_EVENT_NUM];
     TimerWheel tw;
+    std::map<int,Timer> user_timer;
 public:
     Server();
     void start_listen();
     void event_loop();
-    int timeout_func(UserData *);
+    void delfd(int);
+    void end_connection(Timer &);
+    bool fd_exist(int fd);
+    friend class Timer;
 };
 #endif

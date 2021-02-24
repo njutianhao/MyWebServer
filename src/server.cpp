@@ -1,9 +1,5 @@
 #include "server.h"
 
-int timeout_callback(UserData *d){
-    return 0;
-}
-
 int setnonblocking(int fd) 
 { 
     int old_opt = fcntl(fd,F_GETFL);
@@ -21,11 +17,24 @@ void addfd(int epfd, int fd)
 }
 
 Server::Server():tw(this){
+    //TODO:
     ;
 }
 
-int Server::timeout_func(UserData *data){
+void Server::delfd(int fd){
     //TODO:
+    epoll_ctl(epfd,EPOLL_CTL_DEL,fd,0);
+    user_timer.erase(fd);
+    close(fd);
+}
+
+void Server::end_connection(Timer &data){
+    delfd(data.data->socketfd);
+    tw.remove_timer(data);
+}
+
+bool Server::fd_exist(int fd){
+    return ;
 }
 
 void Server::start_listen(){
@@ -60,11 +69,24 @@ void Server::event_loop(){
         {
             if(event[i].data.fd == listenfd)
             {
-                //TODO:
+                sockaddr_in addr;
+                unsigned long addrlen = sizeof(addr);
+                while(1)
+                {
+                    int connfd = accept(listenfd,(sockaddr *)&addr,(socklen_t *)&addrlen);
+                    if(connfd < 0)
+                        break;
+                    //TODO:over user count
+                    UserData data;
+                    //TODO:buff?
+                    data.addr = addr;
+                    data.socketfd = connfd;
+                    user_timer[connfd] = tw.add_timer(&data,TIMEOUT_VAL);
+                }
             }
             else if(event[i].events & (EPOLLHUP | EPOLLRDHUP | EPOLLERR))
             {
-                //TODO:
+                end_connection(user_timer[event[i].data.fd]);
             }
             else if(event[i].events & EPOLLIN)
             {

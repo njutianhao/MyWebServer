@@ -25,6 +25,7 @@ public:
     Timer(int,int,UserData *,Server *server);
     int update();
     int get_position();
+    friend class Server;
 };
 class TimerWheel{
 private:
@@ -33,8 +34,8 @@ private:
     Server *server;
 public:
     TimerWheel(Server *server);
-    int add_timer(UserData *data,int timeout);
-    void remove_timer(Timer *);
+    Timer add_timer(UserData *data,int timeout);
+    void remove_timer(Timer &);
     void tick();
 };
 
