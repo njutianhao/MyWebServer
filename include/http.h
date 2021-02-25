@@ -18,15 +18,19 @@ enum ParseState{
     char buff[HTTP_BUFF_SIZE];
     int  recv_index;
     int parse_index;
+    int current_content_size;
+    int content_size;
     std::string method;
     std::string url;
     std::string version;
+    std::string content;
     ParseState state;
     std::map<std::string,std::string> headers;
-    std::vector<std::string> split(char *,char);
+    std::vector<std::string> split(char *,char,bool);
 public:
     HttpConnection(int);
     int read();
     int parse();
+    void process();
 };
 #endif
