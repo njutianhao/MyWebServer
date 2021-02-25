@@ -4,6 +4,8 @@ ThreadPool::ThreadPool() throw(){
     {
         int ret = pthread_create(threads+i,NULL,start_routine,NULL);
         assert(ret == 0);
+        ret = pthread_detach(threads[i]);
+        assert(ret == 0);
     }
     try
     {
@@ -44,11 +46,20 @@ void ThreadPool::run(){
         if(queue.empty())
         {
             pthread_mutex_unlock(&mutex);
+            sem_post(&requests); //TODO:check 
+            continue;
         }
         UserData *data = queue.front();
         queue.pop_front();
         fd_exist.erase(data->socketfd);
         pthread_mutex_unlock(&mutex);
         //TODO:process data
+        char buff[1024];
+        int ret;
+        while(1)
+        {
+            ret = recv(data->socketfd,buff,sizeof(buff),0);
+        }
+        
     }
 }

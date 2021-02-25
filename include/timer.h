@@ -5,14 +5,12 @@
 #include<list>
 #include<array>
 #include"server.h"
-#define BUFFER_SIZE 64
 #define SLOT_NUM 60
 #define SI 1
 class Timer;
 struct UserData{
     sockaddr_in addr;
     int socketfd;
-    char buff[BUFFER_SIZE];
     Timer *timer;
 };
 class Timer{

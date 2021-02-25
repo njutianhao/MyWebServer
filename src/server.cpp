@@ -11,7 +11,7 @@ void addfd(int epfd, int fd)
 { 
     epoll_event event;
     event.data.fd = fd;
-    event.events = EPOLLIN|EPOLLET;
+    event.events = EPOLLIN|EPOLLET|EPOLLONESHOT;
     epoll_ctl(epfd,EPOLL_CTL_ADD,fd,&event);
     setnonblocking(fd);
 }
@@ -49,7 +49,7 @@ void Server::start_listen(){
     assert(ret >= 0);
     ret = listen(listenfd,backlog);
     assert(ret >= 0);
-    epfd = epoll_create(epfdsize);
+    epfd = epoll_create(5);
     assert(epfd != -1);
     addfd(epfd,listenfd);
 }
@@ -82,6 +82,7 @@ void Server::event_loop(){
                     data.addr = addr;
                     data.socketfd = connfd;
                     user_timer[connfd] = tw.add_timer(&data,TIMEOUT_VAL);
+                    
                 }
             }
             else if(event[i].events & (EPOLLHUP | EPOLLRDHUP | EPOLLERR))
@@ -90,7 +91,7 @@ void Server::event_loop(){
             }
             else if(event[i].events & EPOLLIN)
             {
-                //TODO:
+                tp.append(user_timer[event[i].data.fd].data);
             }
             else if(event[i].events & EPOLLOUT)
             {
