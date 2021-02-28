@@ -10,6 +10,8 @@
 #include<fcntl.h>
 #include<unistd.h>
 #include<sys/stat.h>
+#include<sys/mman.h>
+#include<sys/uio.h>
 #define HTTP_BUFF_SIZE 2048
 #define FILE_PATH_SIZE 2048
 class HttpConnection{
@@ -38,12 +40,13 @@ enum ParseState{
     std::vector<std::string> split(char *,char,bool,bool);
 public:
     HttpConnection(int);
-    int read();
+    void init();
+    int run();
     int parse();
     void adjust_buff();
     int process();
     void send_404_response();
     void send_400_response();
-    void send_200_response(int);
+    void send_200_response(int,struct stat);
 };
 #endif

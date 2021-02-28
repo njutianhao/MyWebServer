@@ -53,7 +53,10 @@ void ThreadPool::run(){
         queue.pop_front();
         fd_exist.erase(data->socketfd);
         pthread_mutex_unlock(&mutex);
-        
-
+        if(user_conn.find(data->socketfd) == user_conn.end())
+        {
+            user_conn[data->socketfd] = new HttpConnection(data->socketfd);
+        }
+        user_conn[data->socketfd]->run();
     }
 }

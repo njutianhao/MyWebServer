@@ -12,6 +12,7 @@ private:
     const int THREAD_NUM = 8;
     pthread_t *threads;
     pthread_mutex_t mutex;
+    std::map<int,HttpConnection *> user_conn;
     sem_t requests;
     bool stop = false;
     bool exist(int);

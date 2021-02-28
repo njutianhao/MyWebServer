@@ -31,7 +31,7 @@ std::vector<std::string> HttpConnection::split(char *str,char delim,bool take_de
     return vec;
 }
 
-int HttpConnection::read(){
+int HttpConnection::run(){
     int ret;
     while(1)
     {
@@ -48,6 +48,12 @@ void HttpConnection::adjust_buff(){
     {
         buff[i] = buff[parse_index + i];
     }
+    recv_index -= parse_index;
+    parse_index = 0;
+    headers.clear();
+    params.clear();
+    keepalive = false;
+    state = PARSE_REQUEST;
 }
 
 int HttpConnection::parse(){
@@ -85,6 +91,9 @@ int HttpConnection::parse(){
             }
             else
             {
+                parse_index += vec[i].size();
+                adjust_buff();
+                send_400_response();
                 return -1;
             }
             break;
@@ -94,8 +103,9 @@ int HttpConnection::parse(){
                 if(headers.find("Content-length") == headers.end() || headers["Content-length"] == "0")
                 {
                     parse_index += vec[i].size();
+                    int ret = process();
                     adjust_buff();
-                    return process();
+                    return ret;
                 }
                 else
                 {
@@ -116,7 +126,12 @@ int HttpConnection::parse(){
                     i++;
                 }
                 else
+                {
+                    parse_index += vec[i].size();
+                    adjust_buff();
+                    send_400_response();
                     return -1;
+                }
             }
             break;
         case PARSE_CONTENT:
@@ -127,11 +142,15 @@ int HttpConnection::parse(){
             if(current_content_size >= content_size)
             {
                 parse_index += vec[i].size();
+                int ret = process();
                 adjust_buff();
-                return process();
+                return ret;
             }
             break;
-        default:return -1;
+        default:
+            adjust_buff();
+            send_400_response();
+            return -1;
         }
     }
     return 0;
@@ -150,7 +169,30 @@ Connection:%s\r\n\
 }
 
 void HttpConnection::send_400_response(){
+    char response[HTTP_BUFF_SIZE];
+    char content_400[] = "Bad Request\r\n";
+    sprintf(response,"\
+HTTP/1.1 400 Bad Request\r\n\
+Content-Length:%d\r\n\
+Connection:%s\r\n\
+\r\n\
+%s",sizeof(content_400),keepalive==true?"keep-alive":"close",content_400);
+    write(fd,response,strlen(response));
+}
 
+void HttpConnection::send_200_response(int file_fd,struct stat file_stat){
+    char response_head[HTTP_BUFF_SIZE];
+    sprintf(response_head,"\
+HTTP/1.1 200 OK\r\n\
+Content-Length:%d\r\n\
+Connection:%s\r\n\
+\r\n",file_stat.st_size,keepalive==true?"keep-alive":"close");
+    iovec iov[2];
+    iov[0].iov_base = response_head;
+    iov[0].iov_len = strlen(response_head);
+    iov[1].iov_base = mmap(NULL,file_stat.st_size,PROT_READ,MAP_SHARED,file_fd,0);
+    iov[1].iov_len = file_stat.st_size;
+    writev(fd,iov,2);
 }
 
 int HttpConnection::process(){
@@ -167,6 +209,7 @@ int HttpConnection::process(){
         else if(file_name == url)
         {
             send_404_response();
+            adjust_buff();
             return 0;
         }
         char file_path[FILE_PATH_SIZE];
@@ -176,12 +219,18 @@ int HttpConnection::process(){
         if(stat(file_path,&file_stat) < 0)
         {
             send_404_response();
+            adjust_buff();
             return 0;
         }
-        int fd = open(file_path,O_RDONLY);
-        send_200_response(fd);
+        int file_fd = open(file_path,O_RDONLY);
+        adjust_buff();
+        send_200_response(file_fd,file_stat);
         return 1;
     }
     else
+    {
+        send_404_response();
+        adjust_buff();
         return -1;
+    }
 }
