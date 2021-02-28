@@ -53,13 +53,7 @@ void ThreadPool::run(){
         queue.pop_front();
         fd_exist.erase(data->socketfd);
         pthread_mutex_unlock(&mutex);
-        //TODO:process data
-        char buff[1024];
-        int ret;
-        while(1)
-        {
-            ret = recv(data->socketfd,buff,sizeof(buff),0);
-        }
         
+
     }
 }

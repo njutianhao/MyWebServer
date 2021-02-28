@@ -6,7 +6,12 @@
 #include<map>
 #include<memory.h>
 #include<vector>
+#include<regex>
+#include<fcntl.h>
+#include<unistd.h>
+#include<sys/stat.h>
 #define HTTP_BUFF_SIZE 2048
+#define FILE_PATH_SIZE 2048
 class HttpConnection{
 private:
 enum ParseState{
@@ -20,17 +25,25 @@ enum ParseState{
     int parse_index;
     int current_content_size;
     int content_size;
+    char file_path_prefix[FILE_PATH_SIZE];
+    int file_path_prefix_length;
+    bool keepalive;
     std::string method;
     std::string url;
     std::string version;
     std::string content;
     ParseState state;
     std::map<std::string,std::string> headers;
-    std::vector<std::string> split(char *,char,bool);
+    std::map<std::string,std::string> params;
+    std::vector<std::string> split(char *,char,bool,bool);
 public:
     HttpConnection(int);
     int read();
     int parse();
-    void process();
+    void adjust_buff();
+    int process();
+    void send_404_response();
+    void send_400_response();
+    void send_200_response(int);
 };
 #endif
