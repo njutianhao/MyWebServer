@@ -9,6 +9,7 @@ HttpConnection::HttpConnection(int f){
     strcpy(file_path_prefix,"/home/th/Desktop/MyWebServer/root/");
     file_path_prefix_length = strlen(file_path_prefix);
     keepalive = false;
+    pthread_mutex_init(&mutex,NULL);
     memset(buff,0,HTTP_BUFF_SIZE);
 }
 
@@ -36,11 +37,24 @@ int HttpConnection::run(){
     while(1)
     {
         ret = recv(fd,buff + recv_index,HTTP_BUFF_SIZE- recv_index,0);
-        if(ret <= 0)
-            break;
+        if(ret < 0)
+        {
+            if(errno == EAGAIN || errno == EWOULDBLOCK)
+            {
+                return 0; // read again
+            }
+            else
+            {
+                return -2;  // something wrong happened
+            }
+        }
+        else if(ret == 0)
+        {
+            return -1; // connection end
+        }
         recv_index =recv_index + ret;
-        parse();
     }
+    return parse();
 }
 
 void HttpConnection::adjust_buff(){
@@ -198,6 +212,9 @@ Connection:%s\r\n\
 int HttpConnection::process(){
     if(headers.find("Connection") != headers.end() && headers["Connection"] == "keep-alive")
         keepalive = true;
+    int ret = -1;
+    if(keepalive)
+        ret = 1;
     if(method == "GET")
     {
         std::regex pattern("^\\w+://[a-z0-9.]+/");
@@ -210,7 +227,7 @@ int HttpConnection::process(){
         {
             send_404_response();
             adjust_buff();
-            return 0;
+            return ret;
         }
         char file_path[FILE_PATH_SIZE];
         strcpy(file_path,file_path_prefix);
@@ -220,12 +237,12 @@ int HttpConnection::process(){
         {
             send_404_response();
             adjust_buff();
-            return 0;
+            return ret;
         }
         int file_fd = open(file_path,O_RDONLY);
         adjust_buff();
         send_200_response(file_fd,file_stat);
-        return 1;
+        return ret;
     }
     else
     {

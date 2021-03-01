@@ -1,16 +1,16 @@
 #include"timer.h"
 
-Timer::Timer(int r,int p,UserData* d,Server *s){
+Timer::Timer(int r,int p,UserData* d,ThreadPool *t){
     rotation = r;
     position = p;
     data = d;
-    server = s;
+    tp = t;
 }
 
 int Timer::update(){
     if(rotation <= 0)
     {
-        (*server).end_connection(this);
+        (*tp).remove_timer(data->socketfd);
         return 1;
     }
     rotation--;
@@ -21,8 +21,12 @@ int Timer::get_position(){
     return position;
 }
 
-TimerWheel::TimerWheel(Server *s){
-    server = s;
+void Timer::rotation_plus(){
+    rotation++;
+}
+
+TimerWheel::TimerWheel(ThreadPool *t){
+    tp = t;
     current = 0;
     for(int i = 0;i < SLOT_NUM;i++)
     {
@@ -30,13 +34,13 @@ TimerWheel::TimerWheel(Server *s){
     }
 }
 
-Timer TimerWheel::add_timer(UserData *data,int timeout){
+Timer &TimerWheel::add_timer(UserData *data,int timeout){
     if(timeout < 0)
         return ;
     int ticks = timeout/SI;
     int rotation = ticks / SLOT_NUM;
     int position = ((ticks % SLOT_NUM)+current) % SLOT_NUM;
-    slots[position].push_front(Timer(rotation,position,data,server));
+    slots[position].push_front(Timer(rotation,position,data,tp));
     return slots[position].front();
 }
 

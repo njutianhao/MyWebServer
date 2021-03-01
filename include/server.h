@@ -8,7 +8,6 @@
 #include<fcntl.h>
 #include<errno.h>
 #include<stdio.h>
-#include"timer.h"
 #include<map>
 #include<unistd.h>
 #include"threadpool.h"
@@ -23,16 +22,11 @@ private:
     int epfd;
     epoll_event event[MAX_EVENT_NUM];
     ThreadPool tp;
-    TimerWheel tw;
-    std::map<int,Timer> user_timer;
-    std::map<int,HttpConnection> user_conn;
 public:
     Server();
     void start_listen();
     void event_loop();
-    void delfd(int);
-    void end_connection(Timer &);
-    bool fd_exist(int fd);
+    void delfd(int fd);
     friend class Timer;
 };
 #endif

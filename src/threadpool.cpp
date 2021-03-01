@@ -1,5 +1,6 @@
 #include"threadpool.h"
-ThreadPool::ThreadPool() throw(){
+ThreadPool::ThreadPool() throw():tw(this){
+    stop = false;
     for(int i = 0; i < THREAD_NUM;i++)
     {
         int ret = pthread_create(threads+i,NULL,start_routine,NULL);
@@ -10,6 +11,7 @@ ThreadPool::ThreadPool() throw(){
     try
     {
         pthread_mutex_init(&mutex,NULL);
+        pthread_mutex_init(&timer_mutex,NULL);
         sem_init(&requests,0,0);
     }
     catch(...){
@@ -17,17 +19,30 @@ ThreadPool::ThreadPool() throw(){
     }
 }
 
-bool ThreadPool::exist(int fd){
-    return fd_exist.find(fd) != fd_exist.end(); 
+void ThreadPool::add_timer(UserData *data,int timeout){
+    pthread_mutex_lock(&timer_mutex);
+    user_timer[data->socketfd] = tw.add_timer(data,timeout);
+    pthread_mutex_unlock(&timer_mutex);
 }
 
-void ThreadPool::append(UserData *data){
-    int fd = data->socketfd;
+void ThreadPool::remove_timer(int fd){
+    pthread_mutex_lock(&timer_mutex);
+    tw.remove_timer(user_timer[fd]);
+    pthread_mutex_unlock(&timer_mutex);
+}
+
+void ThreadPool::remove_connection(int fd){
+    pthread_mutex_lock(&user_conn[fd]->mutex);
+    user_conn.erase(fd);
+    pthread_mutex_unlock(&user_conn[fd]->mutex);
+}
+
+void ThreadPool::append(int fd){
     pthread_mutex_lock(&mutex);
-    if(!exist(fd))
+    if(fd_exist.find(fd) == fd_exist.end())
     {
         fd_exist[fd] = true;
-        queue.push_back(data);
+        queue.push_back(fd);
     }
     pthread_mutex_unlock(&mutex);
     sem_post(&requests);
@@ -49,14 +64,19 @@ void ThreadPool::run(){
             sem_post(&requests); //TODO:check 
             continue;
         }
-        UserData *data = queue.front();
+        int fd = queue.front();
         queue.pop_front();
-        fd_exist.erase(data->socketfd);
+        fd_exist.erase(fd);
         pthread_mutex_unlock(&mutex);
-        if(user_conn.find(data->socketfd) == user_conn.end())
+        if(user_conn.find(fd) == user_conn.end())
         {
-            user_conn[data->socketfd] = new HttpConnection(data->socketfd);
+            user_conn[fd] = new HttpConnection(fd);
         }
-        user_conn[data->socketfd]->run();
+        pthread_mutex_lock(&user_conn[fd]->mutex);
+        if(user_conn[fd]->run() == -1)
+        {
+            user_conn.erase(fd);
+        }
+        pthread_mutex_unlock(&user_conn[fd]->mutex);
     }
 }

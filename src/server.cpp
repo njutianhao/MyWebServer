@@ -16,25 +16,14 @@ void addfd(int epfd, int fd)
     setnonblocking(fd);
 }
 
-Server::Server():tw(this){
+Server::Server(){
     //TODO:
     ;
 }
 
 void Server::delfd(int fd){
-    //TODO:
     epoll_ctl(epfd,EPOLL_CTL_DEL,fd,0);
-    user_timer.erase(fd);
     close(fd);
-}
-
-void Server::end_connection(Timer &data){
-    delfd(data.data->socketfd);
-    tw.remove_timer(data);
-}
-
-bool Server::fd_exist(int fd){
-    return ;
 }
 
 void Server::start_listen(){
@@ -78,24 +67,22 @@ void Server::event_loop(){
                         break;
                     //TODO:over user count
                     UserData data;
-                    //TODO:buff?
                     data.addr = addr;
                     data.socketfd = connfd;
-                    user_timer[connfd] = tw.add_timer(&data,TIMEOUT_VAL);
-                    
+                    tp.add_timer(&data,TIMEOUT_VAL);
+                    addfd(epfd,connfd);
                 }
             }
             else if(event[i].events & (EPOLLHUP | EPOLLRDHUP | EPOLLERR))
             {
-                end_connection(user_timer[event[i].data.fd]);
+                epoll_ctl(epfd,EPOLL_CTL_DEL,event[i].data.fd,NULL);
+                tp.remove_timer(event[i].data.fd);
+                tp.remove_connection(event[i].data.fd);
+                close(event[i].data.fd);
             }
             else if(event[i].events & EPOLLIN)
             {
-                tp.append(user_timer[event[i].data.fd].data);
-            }
-            else if(event[i].events & EPOLLOUT)
-            {
-                //TODO:
+                tp.append(event[i].data.fd);
             }
         }
     }
