@@ -213,9 +213,31 @@ Connection:%s\r\n\
 }
 
 int HttpConnection::send(){
-    writev(fd,iov,2);
+    while(1)
+    {
+        int ret = writev(fd,iov,2);
+        if(ret == -1)
+        {
+            if(errno == EAGAIN || errno == EWOULDBLOCK)
+                return 0;
+            else
+                return -1;
+        }
+        else
+        {
+            if(iov[0].iov_len >= ret)
+                iov[0].iov_len -= ret;
+            else
+            {
+                iov[1].iov_len -= ret - iov[0].iov_len;
+                iov[0].iov_len = 0;
+            }
+            if(iov[1].iov_len <= 0)
+                break;
+        }
+    }
     if(!keepalive)
-        return 0;
+        return -1;
     else
     {
         adjust_buff();

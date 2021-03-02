@@ -80,8 +80,8 @@ void ThreadPool::run(){
             {
                 user_conn.erase(fd);
                 pthread_mutex_unlock(&user_conn[fd]->mutex);
-                remove_timer(fd);
                 epoll_ctl(epfd,EPOLL_CTL_DEL,fd,NULL);
+                remove_timer(fd);
                 close(fd);
             }
             else if(ret == 0)
@@ -103,8 +103,28 @@ void ThreadPool::run(){
         else if(event.events & EPOLLOUT)
         {
             assert(user_conn.find(fd) != user_conn.end());
-            (*user_conn[fd]).send();
-            
+            int ret = (*user_conn[fd]).send();
+            if(ret == -1)
+            {
+                epoll_ctl(epfd,EPOLL_CTL_DEL,fd,NULL);
+                remove_timer(fd);
+                remove_connection(fd);
+                close(fd);
+            }
+            else if(ret == 0)
+            {
+                epoll_event event;
+                event.events = EPOLLOUT|EPOLLET|EPOLLONESHOT;
+                event.data.fd = fd;
+                epoll_ctl(epfd,EPOLL_CTL_MOD,fd,&event);
+            }
+            else if(ret == 1)
+            {
+                epoll_event event;
+                event.events = EPOLLIN|EPOLLET|EPOLLONESHOT;
+                event.data.fd = fd;
+                epoll_ctl(epfd,EPOLL_CTL_MOD,fd,&event);
+            }
         }
     }
 }
