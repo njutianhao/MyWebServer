@@ -9,6 +9,8 @@ HttpConnection::HttpConnection(int f){
     strcpy(file_path_prefix,"/home/th/Desktop/MyWebServer/root/");
     file_path_prefix_length = strlen(file_path_prefix);
     keepalive = false;
+    file_fd = -1;
+    file_size = 0;
     pthread_mutex_init(&mutex,NULL);
     memset(buff,0,HTTP_BUFF_SIZE);
 }
@@ -54,7 +56,17 @@ int HttpConnection::run(){
         }
         recv_index =recv_index + ret;
     }
-    return parse();
+    int ret = parse();
+    if(ret == 1)
+        ret = process();
+    switch(ret){
+        case -2: create_404_response();break;
+        case -1: create_400_response();break;
+        case 0:return 0;
+        case 1: create_200_response();break;
+        default:create_400_response();
+    }
+    return 1;
 }
 
 void HttpConnection::adjust_buff(){
@@ -68,8 +80,13 @@ void HttpConnection::adjust_buff(){
     params.clear();
     keepalive = false;
     state = PARSE_REQUEST;
+    current_content_size = 0;
+    content_size = 0;
+    file_fd = -1;
+    file_size = 0;
 }
 
+// 400:-1 404:-2 again:0 finish:1
 int HttpConnection::parse(){
     std::vector<std::string> vec = split(buff + parse_index,'\n',true,false);
     std::vector<std::string> line_vec;
@@ -104,12 +121,7 @@ int HttpConnection::parse(){
                 i++;
             }
             else
-            {
-                parse_index += vec[i].size();
-                adjust_buff();
-                send_400_response();
                 return -1;
-            }
             break;
         case PARSE_HEADER: 
             if(vec[i] == "\r\n")
@@ -118,8 +130,7 @@ int HttpConnection::parse(){
                 {
                     parse_index += vec[i].size();
                     int ret = process();
-                    adjust_buff();
-                    return ret;
+                    return 1;
                 }
                 else
                 {
@@ -140,12 +151,7 @@ int HttpConnection::parse(){
                     i++;
                 }
                 else
-                {
-                    parse_index += vec[i].size();
-                    adjust_buff();
-                    send_400_response();
                     return -1;
-                }
             }
             break;
         case PARSE_CONTENT:
@@ -156,65 +162,68 @@ int HttpConnection::parse(){
             if(current_content_size >= content_size)
             {
                 parse_index += vec[i].size();
-                int ret = process();
-                adjust_buff();
-                return ret;
+                return 1;
             }
             break;
         default:
-            adjust_buff();
-            send_400_response();
             return -1;
         }
     }
     return 0;
 }
 
-void HttpConnection::send_404_response(){
-    char response[HTTP_BUFF_SIZE];
-    char content_404[] = "404 Not Found\r\n";
-    sprintf(response,"\
+void HttpConnection::create_404_response(){
+    strcpy(send_buff_content,"404 Not Found\r\n");
+    sprintf(send_buff_header,"\
 HTTP/1.1 404 Not Found\r\n\
 Content-Length:%d\r\n\
 Connection:%s\r\n\
-\r\n\
-%s",sizeof(content_404),keepalive==true?"keep-alive":"close",content_404);
-    write(fd,response,strlen(response));
+\r\n",sizeof(send_buff_content),keepalive==true?"keep-alive":"close");
+    iov[0].iov_base = send_buff_header;
+    iov[0].iov_len = strlen(send_buff_header);
+    iov[1].iov_base = send_buff_content;
+    iov[1].iov_len = strlen(send_buff_content);
 }
 
-void HttpConnection::send_400_response(){
-    char response[HTTP_BUFF_SIZE];
-    char content_400[] = "Bad Request\r\n";
-    sprintf(response,"\
+void HttpConnection::create_400_response(){
+    strcpy(send_buff_content,"Bad Request\r\n");
+    sprintf(send_buff_header,"\
 HTTP/1.1 400 Bad Request\r\n\
 Content-Length:%d\r\n\
 Connection:%s\r\n\
-\r\n\
-%s",sizeof(content_400),keepalive==true?"keep-alive":"close",content_400);
-    write(fd,response,strlen(response));
+\r\n",sizeof(send_buff_content),keepalive==true?"keep-alive":"close");
+    iov[0].iov_base = send_buff_header;
+    iov[0].iov_len = strlen(send_buff_header);
+    iov[1].iov_base = send_buff_content;
+    iov[1].iov_len = strlen(send_buff_content);
 }
 
-void HttpConnection::send_200_response(int file_fd,struct stat file_stat){
-    char response_head[HTTP_BUFF_SIZE];
-    sprintf(response_head,"\
+void HttpConnection::create_200_response(){
+    if(headers.find("Connection") != headers.end() && headers["Connection"] == "keep-alive")
+        keepalive = true;
+    sprintf(send_buff_header,"\
 HTTP/1.1 200 OK\r\n\
 Content-Length:%d\r\n\
 Connection:%s\r\n\
-\r\n",file_stat.st_size,keepalive==true?"keep-alive":"close");
-    iovec iov[2];
-    iov[0].iov_base = response_head;
-    iov[0].iov_len = strlen(response_head);
-    iov[1].iov_base = mmap(NULL,file_stat.st_size,PROT_READ,MAP_SHARED,file_fd,0);
-    iov[1].iov_len = file_stat.st_size;
+\r\n",file_size,keepalive==true?"keep-alive":"close");
+    iov[0].iov_base = send_buff_header;
+    iov[0].iov_len = strlen(send_buff_header);
+    iov[1].iov_base = mmap(NULL,file_size,MAP_SHARED,0,file_fd,0);
+    iov[1].iov_len = file_size;
+}
+
+int HttpConnection::send(){
     writev(fd,iov,2);
+    if(!keepalive)
+        return 0;
+    else
+    {
+        adjust_buff();
+        return 1;
+    }
 }
 
 int HttpConnection::process(){
-    if(headers.find("Connection") != headers.end() && headers["Connection"] == "keep-alive")
-        keepalive = true;
-    int ret = -1;
-    if(keepalive)
-        ret = 1;
     if(method == "GET")
     {
         std::regex pattern("^\\w+://[a-z0-9.]+/");
@@ -224,30 +233,19 @@ int HttpConnection::process(){
         if(file_name.empty())
             file_name = "index.html";
         else if(file_name == url)
-        {
-            send_404_response();
-            adjust_buff();
-            return ret;
-        }
+            return -2;
         char file_path[FILE_PATH_SIZE];
         strcpy(file_path,file_path_prefix);
         strcat(file_path,file_name.c_str());
         struct stat file_stat;
         if(stat(file_path,&file_stat) < 0)
-        {
-            send_404_response();
-            adjust_buff();
-            return ret;
-        }
-        int file_fd = open(file_path,O_RDONLY);
-        adjust_buff();
-        send_200_response(file_fd,file_stat);
-        return ret;
+            return -2;
+        file_fd = open(file_path,O_RDONLY);
+        if(file_fd == -1)
+            return -2; //in fact it should be other code
+        file_size = file_stat.st_size;
+        return 1;
     }
     else
-    {
-        send_404_response();
-        adjust_buff();
         return -1;
-    }
 }

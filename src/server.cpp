@@ -41,10 +41,15 @@ void Server::start_listen(){
     epfd = epoll_create(5);
     assert(epfd != -1);
     addfd(epfd,listenfd);
+    tp.setepfd(epfd);
+    int fds[2];
+    ret = socketpair(PF_UNIX,SOCK_STREAM,0,fds);
+    assert(ret != -1);
+    addfd(epfd,fds[0]);
+    
 }
 
 void Server::event_loop(){
-
     while(1)
     {
         // TODO: TIMEOUT

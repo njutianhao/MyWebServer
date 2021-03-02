@@ -19,6 +19,10 @@ ThreadPool::ThreadPool() throw():tw(this){
     }
 }
 
+void ThreadPool::setepfd(int f){
+    epfd = f;
+}
+
 void ThreadPool::add_timer(UserData *data,int timeout){
     pthread_mutex_lock(&timer_mutex);
     user_timer[data->socketfd] = tw.add_timer(data,timeout);
@@ -37,13 +41,9 @@ void ThreadPool::remove_connection(int fd){
     pthread_mutex_unlock(&user_conn[fd]->mutex);
 }
 
-void ThreadPool::append(int fd){
+void ThreadPool::append(epoll_event event){
     pthread_mutex_lock(&mutex);
-    if(fd_exist.find(fd) == fd_exist.end())
-    {
-        fd_exist[fd] = true;
-        queue.push_back(fd);
-    }
+    queue.push_back(event);
     pthread_mutex_unlock(&mutex);
     sem_post(&requests);
 }
@@ -64,19 +64,47 @@ void ThreadPool::run(){
             sem_post(&requests); //TODO:check 
             continue;
         }
-        int fd = queue.front();
+        epoll_event event = queue.front();
         queue.pop_front();
-        fd_exist.erase(fd);
         pthread_mutex_unlock(&mutex);
-        if(user_conn.find(fd) == user_conn.end())
+        int fd = event.data.fd;
+        if(event.events & EPOLLIN)
         {
-            user_conn[fd] = new HttpConnection(fd);
+            if(user_conn.find(fd) == user_conn.end())
+            {
+                user_conn[fd] = new HttpConnection(fd);
+            }
+            pthread_mutex_lock(&user_conn[fd]->mutex);
+            int ret = user_conn[fd]->run();
+            if(ret == -1)
+            {
+                user_conn.erase(fd);
+                pthread_mutex_unlock(&user_conn[fd]->mutex);
+                remove_timer(fd);
+                epoll_ctl(epfd,EPOLL_CTL_DEL,fd,NULL);
+                close(fd);
+            }
+            else if(ret == 0)
+            {
+                pthread_mutex_unlock(&user_conn[fd]->mutex);
+                epoll_event event;
+                event.events = EPOLLIN|EPOLLET|EPOLLONESHOT;
+                event.data.fd = fd;
+                epoll_ctl(epfd,EPOLL_CTL_MOD,fd,&event);
+            }
+            else if(ret == 1)
+            {
+                epoll_event event;
+                event.events = EPOLLOUT|EPOLLET|EPOLLONESHOT;
+                event.data.fd = fd;
+                epoll_ctl(epfd,EPOLL_CTL_MOD,fd,&event);
+            }
         }
-        pthread_mutex_lock(&user_conn[fd]->mutex);
-        if(user_conn[fd]->run() == -1)
+        else if(event.events & EPOLLOUT)
         {
-            user_conn.erase(fd);
+            assert(user_conn.find(fd) != user_conn.end());
+            (*user_conn[fd]).send();
+            
         }
-        pthread_mutex_unlock(&user_conn[fd]->mutex);
     }
 }

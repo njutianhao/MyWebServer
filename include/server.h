@@ -10,6 +10,7 @@
 #include<stdio.h>
 #include<map>
 #include<unistd.h>
+#include<signal.h>
 #include"threadpool.h"
 #include"http.h"
 #define MAX_EVENT_NUM 10000

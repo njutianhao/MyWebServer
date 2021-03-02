@@ -14,8 +14,8 @@
 #include<sys/uio.h>
 #include<error.h>
 #include<pthread.h>
-#define HTTP_BUFF_SIZE 2048
-#define FILE_PATH_SIZE 2048
+#define HTTP_BUFF_SIZE 1024
+#define FILE_PATH_SIZE 256
 class HttpConnection{
 private:
 enum ParseState{
@@ -25,13 +25,18 @@ enum ParseState{
     };
     int fd;
     char buff[HTTP_BUFF_SIZE];
+    char send_buff_header[HTTP_BUFF_SIZE];
+    char send_buff_content[HTTP_BUFF_SIZE];
     int  recv_index;
     int parse_index;
     int current_content_size;
     int content_size;
     char file_path_prefix[FILE_PATH_SIZE];
     int file_path_prefix_length;
+    off_t file_size;
+    int file_fd;
     bool keepalive;
+    iovec iov[2];
     std::string method;
     std::string url;
     std::string version;
@@ -48,8 +53,9 @@ public:
     int parse();
     void adjust_buff();
     int process();
-    void send_404_response();
-    void send_400_response();
-    void send_200_response(int,struct stat);
+    int send();
+    void create_404_response();
+    void create_400_response();
+    void create_200_response();
 };
 #endif

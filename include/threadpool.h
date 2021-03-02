@@ -5,10 +5,12 @@
 #include"timer.h"
 #include<pthread.h>
 #include<semaphore.h>
+#include<sys/epoll.h>
 class ThreadPool{
 private:
-    std::list<int> queue;
+    std::list<epoll_event> queue;
     const int THREAD_NUM = 8;
+    int epfd;
     pthread_t *threads;
     pthread_mutex_t mutex;
     pthread_mutex_t timer_mutex;
@@ -20,11 +22,12 @@ private:
     bool stop ;
 public:
     ThreadPool() throw();
+    void setepfd(int);
     void delfd(int);
     void remove_timer(int);
     void remove_connection(int);
     void add_timer(UserData *data,int timeout);
-    void append(int);
+    void append(epoll_event);
     static void *start_routine(void *);
     void run();
 };
