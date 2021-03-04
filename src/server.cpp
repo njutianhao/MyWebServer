@@ -1,5 +1,5 @@
 #include "server.h"
-
+int Server::sigpipe[2] = {0};
 int setnonblocking(int fd) 
 { 
     int old_opt = fcntl(fd,F_GETFL);
@@ -7,18 +7,32 @@ int setnonblocking(int fd)
     return old_opt;
 }
 
-void addfd(int epfd, int fd)
+void addfd(int epfd, int fd,bool oneshot)
 { 
     epoll_event event;
     event.data.fd = fd;
-    event.events = EPOLLIN|EPOLLET|EPOLLONESHOT;
+    event.events = EPOLLIN|EPOLLET;
+    if(oneshot)
+        event.events |= EPOLLONESHOT;
     epoll_ctl(epfd,EPOLL_CTL_ADD,fd,&event);
     setnonblocking(fd);
 }
 
+void addsig(int sig) { 
+    struct sigaction sa;
+    memset(&sa,0,sizeof(sa));
+    sa.sa_handler= Server::sighandler;
+    sa.sa_flags|= SA_RESTART;
+    sigfillset(&sa.sa_mask);
+    assert(sigaction( sig,&sa, NULL)!=-1);
+}
+
+
+void Server::sighandler(int sig){
+    send(sigpipe[1],(char *)&sig,1,0);
+}
+
 Server::Server(){
-    //TODO:
-    ;
 }
 
 void Server::delfd(int fd){
@@ -40,19 +54,21 @@ void Server::start_listen(){
     assert(ret >= 0);
     epfd = epoll_create(5);
     assert(epfd != -1);
-    addfd(epfd,listenfd);
+    addfd(epfd,listenfd,false);
     tp.setepfd(epfd);
-    int fds[2];
-    ret = socketpair(PF_UNIX,SOCK_STREAM,0,fds);
+    ret = socketpair(PF_UNIX,SOCK_STREAM,0,sigpipe);
     assert(ret != -1);
-    addfd(epfd,fds[0]);
-    
+    addfd(epfd,sigpipe[0],false);
+    addsig(SIGALRM);
+    addsig(SIGTERM);
+    addsig(SIGINT);
 }
 
 void Server::event_loop(){
-    while(1)
+    bool alarm = false;
+    bool stop = false;
+    while(!stop)
     {
-        // TODO: TIMEOUT
         int ret = epoll_wait(epfd,event,MAX_EVENT_NUM,-1);
         if(ret == -1)
         {
@@ -70,25 +86,47 @@ void Server::event_loop(){
                     int connfd = accept(listenfd,(sockaddr *)&addr,(socklen_t *)&addrlen);
                     if(connfd < 0)
                         break;
-                    //TODO:over user count
                     UserData data;
                     data.addr = addr;
                     data.socketfd = connfd;
                     tp.add_timer(&data,TIMEOUT_VAL);
-                    addfd(epfd,connfd);
+                    addfd(epfd,connfd,true);
+                }
+            }
+            else if(event[i].data.fd == sigpipe[0] && (event[i].events & EPOLLIN)) 
+            {
+                char sig[1024];
+                int ret = recv(sigpipe[0],sig,1024,0);
+                if(ret > 0)
+                {
+                    for(int i = 0;i < ret;i++)
+                    {
+                        switch(sig[i])
+                        {
+                            case SIGALRM:alarm = true;break;
+                            case SIGINT:case SIGTERM: stop = true;break;
+                            default: ;
+                        }
+                    }
                 }
             }
             else if(event[i].events & (EPOLLHUP | EPOLLRDHUP | EPOLLERR))
             {
-                epoll_ctl(epfd,EPOLL_CTL_DEL,event[i].data.fd,NULL);
-                tp.remove_timer(event[i].data.fd);
-                tp.remove_connection(event[i].data.fd);
-                close(event[i].data.fd);
+                tp.end_connection(event[i].data.fd);
             }
             else if(event[i].events & EPOLLIN)
             {
-                tp.append(event[i].data.fd);
+                tp.append(&event[i]);
             }
+            else if(event[i].events & EPOLLOUT)
+            {
+                tp.append(&event[i]);
+            }
+        }
+        if(alarm)
+        {
+            alarm = false;
+            tp.tick();
         }
     }
 }

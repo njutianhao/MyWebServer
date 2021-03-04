@@ -1,0 +1,1 @@
+/usr/bin/c++   -std=c++11 -g -pthread   CMakeFiles/MyWebServer.dir/main.cpp.o  -o MyWebServer   -L/usr/local/lib  -Wl,-rpath,/usr/local/lib src/libMyServerLib.a 

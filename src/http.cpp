@@ -11,7 +11,6 @@ HttpConnection::HttpConnection(int f){
     keepalive = false;
     file_fd = -1;
     file_size = 0;
-    pthread_mutex_init(&mutex,NULL);
     memset(buff,0,HTTP_BUFF_SIZE);
 }
 
@@ -56,7 +55,7 @@ int HttpConnection::run(){
         }
         recv_index =recv_index + ret;
     }
-    int ret = parse();
+    ret = parse();
     if(ret == 1)
         ret = process();
     switch(ret){
@@ -176,7 +175,7 @@ void HttpConnection::create_404_response(){
     strcpy(send_buff_content,"404 Not Found\r\n");
     sprintf(send_buff_header,"\
 HTTP/1.1 404 Not Found\r\n\
-Content-Length:%d\r\n\
+Content-Length:%ld\r\n\
 Connection:%s\r\n\
 \r\n",sizeof(send_buff_content),keepalive==true?"keep-alive":"close");
     iov[0].iov_base = send_buff_header;
@@ -189,7 +188,7 @@ void HttpConnection::create_400_response(){
     strcpy(send_buff_content,"Bad Request\r\n");
     sprintf(send_buff_header,"\
 HTTP/1.1 400 Bad Request\r\n\
-Content-Length:%d\r\n\
+Content-Length:%ld\r\n\
 Connection:%s\r\n\
 \r\n",sizeof(send_buff_content),keepalive==true?"keep-alive":"close");
     iov[0].iov_base = send_buff_header;
@@ -203,7 +202,7 @@ void HttpConnection::create_200_response(){
         keepalive = true;
     sprintf(send_buff_header,"\
 HTTP/1.1 200 OK\r\n\
-Content-Length:%d\r\n\
+Content-Length:%ld\r\n\
 Connection:%s\r\n\
 \r\n",file_size,keepalive==true?"keep-alive":"close");
     iov[0].iov_base = send_buff_header;

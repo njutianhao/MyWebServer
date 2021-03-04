@@ -1,4 +1,5 @@
 #include"timer.h"
+#include"threadpool.h"
 
 Timer::Timer(int r,int p,UserData* d,ThreadPool *t){
     rotation = r;
@@ -10,7 +11,7 @@ Timer::Timer(int r,int p,UserData* d,ThreadPool *t){
 int Timer::update(){
     if(rotation <= 0)
     {
-        (*tp).remove_timer(data->socketfd);
+        (*tp).end_connection(data->socketfd);
         return 1;
     }
     rotation--;
@@ -34,14 +35,13 @@ TimerWheel::TimerWheel(ThreadPool *t){
     }
 }
 
-Timer &TimerWheel::add_timer(UserData *data,int timeout){
-    if(timeout < 0)
-        return ;
+std::list<Timer>::iterator TimerWheel::add_timer(UserData *data,int timeout){
+    assert(timeout >= 0);
     int ticks = timeout/SI;
     int rotation = ticks / SLOT_NUM;
     int position = ((ticks % SLOT_NUM)+current) % SLOT_NUM;
     slots[position].push_front(Timer(rotation,position,data,tp));
-    return slots[position].front();
+    return slots[position].begin();
 }
 
 void TimerWheel::tick(){
@@ -56,6 +56,6 @@ void TimerWheel::tick(){
     current++;
 }
 
-void TimerWheel::remove_timer(Timer &t){
-    slots[t.get_position()].remove(t);
+void TimerWheel::remove_timer(std::list<Timer>::iterator it){
+    slots[it->get_position()].erase(it);
 }

@@ -13,7 +13,8 @@
 #include<sys/mman.h>
 #include<sys/uio.h>
 #include<error.h>
-#include<pthread.h>
+#include<thread>
+#include<mutex>
 #define HTTP_BUFF_SIZE 1024
 #define FILE_PATH_SIZE 256
 class HttpConnection{
@@ -46,7 +47,7 @@ enum ParseState{
     std::map<std::string,std::string> params;
     std::vector<std::string> split(char *,char,bool,bool);
 public:
-    pthread_mutex_t mutex;
+    std::mutex mutex;
     HttpConnection(int);
     void init();
     int run();
