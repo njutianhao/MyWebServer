@@ -3,7 +3,7 @@ int Server::sigpipe[2] = {0};
 int setnonblocking(int fd) 
 { 
     int old_opt = fcntl(fd,F_GETFL);
-    fcntl(fd,old_opt|O_NONBLOCK);
+    fcntl(fd,F_SETFL,old_opt|O_NONBLOCK);
     return old_opt;
 }
 
@@ -24,7 +24,7 @@ void addsig(int sig) {
     sa.sa_handler= Server::sighandler;
     sa.sa_flags|= SA_RESTART;
     sigfillset(&sa.sa_mask);
-    assert(sigaction( sig,&sa, NULL)!=-1);
+    assert(sigaction(sig,&sa, NULL)!=-1);
 }
 
 
@@ -35,11 +35,6 @@ void Server::sighandler(int sig){
 Server::Server(){
 }
 
-void Server::delfd(int fd){
-    epoll_ctl(epfd,EPOLL_CTL_DEL,fd,0);
-    close(fd);
-}
-
 void Server::start_listen(){
     listenfd = socket(PF_INET,SOCK_STREAM,0);
     assert(listenfd >= 0);
@@ -47,9 +42,13 @@ void Server::start_listen(){
     bzero(&addr,sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    addr.sin_port = htonl(port);
+    addr.sin_port = htons(port);
     int ret = bind(listenfd,(sockaddr *)&addr,sizeof(addr));
+    if(ret == -1)
+        perror("");
     assert(ret >= 0);
+    int flag = 1;
+    setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag));
     ret = listen(listenfd,backlog);
     assert(ret >= 0);
     epfd = epoll_create(5);
@@ -61,16 +60,18 @@ void Server::start_listen(){
     addfd(epfd,sigpipe[0],false);
     addsig(SIGALRM);
     addsig(SIGTERM);
-    addsig(SIGINT);
+    addsig(SIGTERM);
+
 }
 
 void Server::event_loop(){
-    bool alarm = false;
+    bool alarm_triggered = false;
     bool stop = false;
+    alarm(SLOT_INTERVAL);
     while(!stop)
     {
         int ret = epoll_wait(epfd,event,MAX_EVENT_NUM,-1);
-        if(ret == -1)
+        if(ret == -1 && errno != EINTR)
         {
             perror("Error");
             return;
@@ -89,7 +90,7 @@ void Server::event_loop(){
                     UserData data;
                     data.addr = addr;
                     data.socketfd = connfd;
-                    tp.add_timer(&data,TIMEOUT_VAL);
+                    tp.add_timer(data,TIMEOUT_VAL);
                     addfd(epfd,connfd,true);
                 }
             }
@@ -103,7 +104,7 @@ void Server::event_loop(){
                     {
                         switch(sig[i])
                         {
-                            case SIGALRM:alarm = true;break;
+                            case SIGALRM:alarm_triggered = true;break;
                             case SIGINT:case SIGTERM: stop = true;break;
                             default: ;
                         }
@@ -116,16 +117,17 @@ void Server::event_loop(){
             }
             else if(event[i].events & EPOLLIN)
             {
-                tp.append(&event[i]);
+                tp.append(event[i]);
             }
             else if(event[i].events & EPOLLOUT)
             {
-                tp.append(&event[i]);
+                tp.append(event[i]);
             }
         }
-        if(alarm)
+        if(alarm_triggered)
         {
-            alarm = false;
+            alarm_triggered = false;
+            alarm(SLOT_INTERVAL);
             tp.tick();
         }
     }

@@ -16,11 +16,11 @@
 #include<sys/types.h>
 #include<bits/signum.h>
 #define MAX_EVENT_NUM 10000
-#define TIMEOUT_VAL 180
+#define TIMEOUT_VAL 30
 class Server{
 private:
     const int port = 2132;
-    const int backlog = 128;
+    const int backlog = 5;
     int listenfd;
     int epfd;
     static int sigpipe[2];
@@ -30,7 +30,6 @@ public:
     Server();
     void start_listen();
     void event_loop();
-    void delfd(int fd);
     static void sighandler(int sig);
     friend class Timer;
 };

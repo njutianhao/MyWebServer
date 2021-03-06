@@ -6,7 +6,10 @@ HttpConnection::HttpConnection(int f){
     state = PARSE_REQUEST;
     current_content_size = 0;
     content_size = 0;
-    strcpy(file_path_prefix,"/home/th/Desktop/MyWebServer/root/");
+    mmaped = false;
+    assert(getcwd(file_path_prefix,FILE_PATH_SIZE) != NULL);
+    strcat(file_path_prefix,"/root");
+    //strcpy(file_path_prefix,"/home/th/Desktop/MyWebServer/root/");
     file_path_prefix_length = strlen(file_path_prefix);
     keepalive = false;
     file_fd = -1;
@@ -25,6 +28,7 @@ std::vector<std::string> HttpConnection::split(char *str,char delim,bool take_de
             vec.push_back(std::string(head,str + a - head));
             head = str + 1;
         }
+        str++;
     }
     if(last_substring && head != str)
     {
@@ -42,11 +46,11 @@ int HttpConnection::run(){
         {
             if(errno == EAGAIN || errno == EWOULDBLOCK)
             {
-                return 0; // read again
+                break; // read again
             }
-            else
+            else   
             {
-                return -2;  // something wrong happened
+                return -1;  // something wrong happened
             }
         }
         else if(ret == 0)
@@ -57,7 +61,10 @@ int HttpConnection::run(){
     }
     ret = parse();
     if(ret == 1)
+    {
         ret = process();
+    }
+    set_keepalive();
     switch(ret){
         case -2: create_404_response();break;
         case -1: create_400_response();break;
@@ -128,7 +135,6 @@ int HttpConnection::parse(){
                 if(headers.find("Content-length") == headers.end() || headers["Content-length"] == "0")
                 {
                     parse_index += vec[i].size();
-                    int ret = process();
                     return 1;
                 }
                 else
@@ -141,11 +147,11 @@ int HttpConnection::parse(){
             }
             else
             {
-                strncpy(tmp,vec[i].c_str(),vec[i].size() - 1);
-                line_vec = split(tmp,':',false,true);
-                if(line_vec.size() == 2)
+                int pos = vec[i].find(':');
+                if(pos != std::string::npos)
                 {
-                    headers[line_vec[0]] = line_vec[1];
+                    std::cout << "debug:"<<vec[i].substr(0,pos)<<"|"<<vec[i].substr(pos+2,vec[i].size() - pos) <<std::endl;
+                    headers[vec[i].substr(0,pos)] = vec[i].substr(pos+2,vec[i].size() - pos);
                     parse_index += vec[i].size();
                     i++;
                 }
@@ -175,9 +181,9 @@ void HttpConnection::create_404_response(){
     strcpy(send_buff_content,"404 Not Found\r\n");
     sprintf(send_buff_header,"\
 HTTP/1.1 404 Not Found\r\n\
-Content-Length:%ld\r\n\
-Connection:%s\r\n\
-\r\n",sizeof(send_buff_content),keepalive==true?"keep-alive":"close");
+Content-Length: %ld\r\n\
+Connection: %s\r\n\
+\r\n",sizeof(send_buff_content),"close");
     iov[0].iov_base = send_buff_header;
     iov[0].iov_len = strlen(send_buff_header);
     iov[1].iov_base = send_buff_content;
@@ -188,9 +194,9 @@ void HttpConnection::create_400_response(){
     strcpy(send_buff_content,"Bad Request\r\n");
     sprintf(send_buff_header,"\
 HTTP/1.1 400 Bad Request\r\n\
-Content-Length:%ld\r\n\
-Connection:%s\r\n\
-\r\n",sizeof(send_buff_content),keepalive==true?"keep-alive":"close");
+Content-Length: %ld\r\n\
+Connection: %s\r\n\
+\r\n",sizeof(send_buff_content),"close");
     iov[0].iov_base = send_buff_header;
     iov[0].iov_len = strlen(send_buff_header);
     iov[1].iov_base = send_buff_content;
@@ -198,17 +204,23 @@ Connection:%s\r\n\
 }
 
 void HttpConnection::create_200_response(){
-    if(headers.find("Connection") != headers.end() && headers["Connection"] == "keep-alive")
-        keepalive = true;
     sprintf(send_buff_header,"\
 HTTP/1.1 200 OK\r\n\
-Content-Length:%ld\r\n\
-Connection:%s\r\n\
+Content-Length: %ld\r\n\
+Connection: %s\r\n\
 \r\n",file_size,keepalive==true?"keep-alive":"close");
     iov[0].iov_base = send_buff_header;
     iov[0].iov_len = strlen(send_buff_header);
-    iov[1].iov_base = mmap(NULL,file_size,MAP_SHARED,0,file_fd,0);
+    mmaped = true;
+    mapaddr = mmap(NULL,file_size,PROT_READ,MAP_PRIVATE,file_fd,0);
+    iov[1].iov_base = mapaddr;
     iov[1].iov_len = file_size;
+    std::cout << "debug:"<< iov[1].iov_base << " " << iov[1].iov_len << std::endl;
+}
+
+void HttpConnection::set_keepalive(){
+    if(headers.find("Connection") != headers.end() && headers["Connection"] == "keep-alive\r\n")
+        keepalive = true;
 }
 
 int HttpConnection::send(){
@@ -220,20 +232,39 @@ int HttpConnection::send(){
             if(errno == EAGAIN || errno == EWOULDBLOCK)
                 return 0;
             else
+            {
+                if(mmaped)
+                {
+                    mmaped = false;
+                    if(munmap(mapaddr,file_size)==-1)
+                    {
+                        perror("Error");
+                    }
+                }
                 return -1;
+            }
         }
         else
         {
             if(iov[0].iov_len >= ret)
+            {
+                iov[0].iov_base = (char *)iov[0].iov_base + ret;
                 iov[0].iov_len -= ret;
+            }
             else
             {
+                iov[1].iov_base = (char *)iov[1].iov_base + ret - iov[0].iov_len;
                 iov[1].iov_len -= ret - iov[0].iov_len;
                 iov[0].iov_len = 0;
             }
             if(iov[1].iov_len <= 0)
                 break;
         }
+    }
+    if(mmaped)
+    {
+        mmaped = false;
+        assert(munmap(mapaddr,file_size)==0);
     }
     if(!keepalive)
         return -1;
@@ -247,23 +278,19 @@ int HttpConnection::send(){
 int HttpConnection::process(){
     if(method == "GET")
     {
-        std::regex pattern("^\\w+://[a-z0-9.]+/");
-        std::smatch match;
-        std::regex_search(url,match,pattern);
-        std::string file_name(match.suffix().str());
-        if(file_name.empty())
-            file_name = "index.html";
-        else if(file_name == url)
+        if(url.empty())
             return -2;
+        else if(url == "/")
+            url += "index.html";
         char file_path[FILE_PATH_SIZE];
         strcpy(file_path,file_path_prefix);
-        strcat(file_path,file_name.c_str());
+        strcat(file_path,url.c_str());
         struct stat file_stat;
         if(stat(file_path,&file_stat) < 0)
             return -2;
         file_fd = open(file_path,O_RDONLY);
         if(file_fd == -1)
-            return -2; //in fact it should be other code
+            return -2; 
         file_size = file_stat.st_size;
         return 1;
     }

@@ -15,6 +15,8 @@
 #include<error.h>
 #include<thread>
 #include<mutex>
+#include<iostream>
+#include<assert.h>
 #define HTTP_BUFF_SIZE 1024
 #define FILE_PATH_SIZE 256
 class HttpConnection{
@@ -37,6 +39,8 @@ enum ParseState{
     off_t file_size;
     int file_fd;
     bool keepalive;
+    bool mmaped;
+    void *mapaddr;
     iovec iov[2];
     std::string method;
     std::string url;
@@ -48,6 +52,7 @@ enum ParseState{
     std::vector<std::string> split(char *,char,bool,bool);
 public:
     std::mutex mutex;
+    void set_keepalive();
     HttpConnection(int);
     void init();
     int run();

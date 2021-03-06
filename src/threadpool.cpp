@@ -4,8 +4,8 @@ ThreadPool::ThreadPool():tw(this){
     stop = false;
     for(int i = 0; i < THREAD_NUM;i++)
     {
-        threads.push_back(std::thread(start_routine,this));
-        threads.back().detach();
+        threads[i] = std::thread(start_routine,this);
+        threads[i].detach();
     }
 }
 
@@ -17,9 +17,9 @@ void ThreadPool::tick(){
     tw.tick();
 }
 
-void ThreadPool::add_timer(UserData *data,int timeout){
+void ThreadPool::add_timer(UserData data,int timeout){
     timer_mutex.lock();
-    user_timer[data->socketfd] = tw.add_timer(data,timeout);
+    user_timer[data.socketfd] = tw.add_timer(data,timeout);
     timer_mutex.unlock();
 }
 
@@ -32,7 +32,6 @@ void ThreadPool::remove_timer(int fd){
 void ThreadPool::remove_user_connection(int fd){
     user_conn[fd]->mutex.lock();
     user_conn.erase(fd);
-    user_conn[fd]->mutex.unlock();
 }
 
 void ThreadPool::end_connection(int fd){
@@ -42,7 +41,7 @@ void ThreadPool::end_connection(int fd){
     close(fd);
 }
 
-void ThreadPool::append(epoll_event *event){
+void ThreadPool::append(epoll_event event){
     queue_mutex.lock();
     queue.push_back(event);
     requests++;
@@ -63,11 +62,12 @@ void ThreadPool::run(){
             queue_mutex.unlock();
             continue;
         }
-        epoll_event *event = queue.front();
-        queue.pop_front();
+        requests--;
+        epoll_event event = queue.back();
+        queue.pop_back();
         queue_mutex.unlock();
-        int fd = event->data.fd;
-        if(event->events & EPOLLIN)
+        int fd = event.data.fd;
+        if(event.events & EPOLLIN)
         {
             if(user_conn.find(fd) == user_conn.end())
             {
@@ -78,7 +78,6 @@ void ThreadPool::run(){
             if(ret == -1)
             {
                 user_conn.erase(fd);
-                user_conn[fd]->mutex.unlock();
                 epoll_ctl(epfd,EPOLL_CTL_DEL,fd,NULL);
                 remove_timer(fd);
                 close(fd);
@@ -102,9 +101,12 @@ void ThreadPool::run(){
                 (*user_timer[fd]).rotation_plus();
             }
         }
-        else if(event->events & EPOLLOUT)
+        else if(event.events & EPOLLOUT)
         {
-            assert(user_conn.find(fd) != user_conn.end());
+            if(user_conn.find(fd) == user_conn.end()){
+                std::cerr << "can't find user_conn when send\n";
+                continue;
+            }
             int ret = (*user_conn[fd]).send();
             if(ret == -1)
             {

@@ -1,7 +1,7 @@
 #include"timer.h"
 #include"threadpool.h"
 
-Timer::Timer(int r,int p,UserData* d,ThreadPool *t){
+Timer::Timer(int r,int p,UserData d,ThreadPool *t){
     rotation = r;
     position = p;
     data = d;
@@ -11,7 +11,7 @@ Timer::Timer(int r,int p,UserData* d,ThreadPool *t){
 int Timer::update(){
     if(rotation <= 0)
     {
-        (*tp).end_connection(data->socketfd);
+        (*tp).end_connection(data.socketfd);
         return 1;
     }
     rotation--;
@@ -29,15 +29,11 @@ void Timer::rotation_plus(){
 TimerWheel::TimerWheel(ThreadPool *t){
     tp = t;
     current = 0;
-    for(int i = 0;i < SLOT_NUM;i++)
-    {
-        slots[i].clear();
-    }
 }
 
-std::list<Timer>::iterator TimerWheel::add_timer(UserData *data,int timeout){
+std::list<Timer>::iterator TimerWheel::add_timer(UserData data,int timeout){
     assert(timeout >= 0);
-    int ticks = timeout/SI;
+    int ticks = timeout/SLOT_INTERVAL;
     int rotation = ticks / SLOT_NUM;
     int position = ((ticks % SLOT_NUM)+current) % SLOT_NUM;
     slots[position].push_front(Timer(rotation,position,data,tp));
@@ -45,15 +41,19 @@ std::list<Timer>::iterator TimerWheel::add_timer(UserData *data,int timeout){
 }
 
 void TimerWheel::tick(){
+    std::list<Timer>::iterator prev = slots[current].end();
     for(std::list<Timer>::iterator i = slots[current].begin();i != slots[current].end();i++)
     {
         if(i->update() == 1)
         {
-            i = slots[current].erase(i);
-            i--;
+            i = prev;
         }
+        else
+        {
+            prev = i;
+        }   
     }
-    current++;
+    current = (current + 1) % SLOT_NUM;
 }
 
 void TimerWheel::remove_timer(std::list<Timer>::iterator it){

@@ -6,6 +6,10 @@
 
 #IncludeRegexTransform: 
 
+/home/th/Desktop/MyWebServer/src/http.cpp
+http.h
+/home/th/Desktop/MyWebServer/src/http.h
+
 /home/th/Desktop/MyWebServer/src/server.cpp
 server.h
 /home/th/Desktop/MyWebServer/src/server.h
@@ -51,6 +55,10 @@ thread
 -
 mutex
 -
+iostream
+-
+assert.h
+-
 
 include/server.h
 sys/socket.h
@@ -93,11 +101,15 @@ thread
 -
 semaphore.h
 -
+iostream
+-
 map
 -
 http.h
 include/http.h
 sys/epoll.h
+-
+sys/types.h
 -
 assert.h
 -

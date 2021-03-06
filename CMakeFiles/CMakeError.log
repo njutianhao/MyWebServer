@@ -1,0 +1,220 @@
+Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+Compiler: /usr/bin/clang++ 
+Build flags: 
+Id flags:  
+
+The output was:
+1
+clang: warning: treating 'c' input as 'c++' when in C++ mode, this behavior is deprecated [-Wdeprecated]
+CMakeCCompilerId.c:2:3: error: "A C++ compiler has been selected for C."
+# error "A C++ compiler has been selected for C."
+  ^
+1 error generated.
+
+
+Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+Compiler: /usr/bin/clang++ 
+Build flags: 
+Id flags: -c 
+
+The output was:
+1
+clang: warning: treating 'c' input as 'c++' when in C++ mode, this behavior is deprecated [-Wdeprecated]
+CMakeCCompilerId.c:2:3: error: "A C++ compiler has been selected for C."
+# error "A C++ compiler has been selected for C."
+  ^
+1 error generated.
+
+
+Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+Compiler: /usr/bin/clang++ 
+Build flags: 
+Id flags: -Aa 
+
+The output was:
+1
+clang: warning: treating 'c' input as 'c++' when in C++ mode, this behavior is deprecated [-Wdeprecated]
+clang: warning: argument unused during compilation: '-Aa' [-Wunused-command-line-argument]
+CMakeCCompilerId.c:2:3: error: "A C++ compiler has been selected for C."
+# error "A C++ compiler has been selected for C."
+  ^
+1 error generated.
+
+
+Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+Compiler: /usr/bin/clang++ 
+Build flags: 
+Id flags: -D__CLASSIC_C__ 
+
+The output was:
+1
+clang: warning: treating 'c' input as 'c++' when in C++ mode, this behavior is deprecated [-Wdeprecated]
+CMakeCCompilerId.c:2:3: error: "A C++ compiler has been selected for C."
+# error "A C++ compiler has been selected for C."
+  ^
+CMakeCCompilerId.c:321:29: warning: ISO C++11 does not allow conversion from string literal to 'char *' [-Wwritable-strings]
+char const* info_compiler = "INFO" ":" "compiler[" COMPILER_ID "]";
+                            ^
+CMakeCCompilerId.c:614:29: warning: ISO C++11 does not allow conversion from string literal to 'char *' [-Wwritable-strings]
+char const* info_platform = "INFO" ":" "platform[" PLATFORM_ID "]";
+                            ^
+CMakeCCompilerId.c:615:25: warning: ISO C++11 does not allow conversion from string literal to 'char *' [-Wwritable-strings]
+char const* info_arch = "INFO" ":" "arch[" ARCHITECTURE_ID "]";
+                        ^
+CMakeCCompilerId.c:635:3: warning: ISO C++11 does not allow conversion from string literal to 'char *' [-Wwritable-strings]
+  "INFO" ":" "dialect_default[" C_DIALECT "]";
+  ^
+CMakeCCompilerId.c:643:10: error: unknown type name 'argc'
+int main(argc, argv) int argc; char *argv[];
+         ^
+CMakeCCompilerId.c:643:16: error: unknown type name 'argv'
+int main(argc, argv) int argc; char *argv[];
+               ^
+CMakeCCompilerId.c:643:21: error: expected ';' after top level declarator
+int main(argc, argv) int argc; char *argv[];
+                    ^
+                    ;
+CMakeCCompilerId.c:643:38: error: definition of variable with array type needs an explicit size or an initializer
+int main(argc, argv) int argc; char *argv[];
+                                     ^
+CMakeCCompilerId.c:647:1: error: expected unqualified-id
+{
+^
+4 warnings and 6 errors generated.
+
+
+Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+Compiler: /usr/bin/clang++ 
+Build flags: 
+Id flags: --target=arm-arm-none-eabi;-mcpu=cortex-m3 
+
+The output was:
+1
+clang: warning: treating 'c' input as 'c++' when in C++ mode, this behavior is deprecated [-Wdeprecated]
+CMakeCCompilerId.c:2:3: error: "A C++ compiler has been selected for C."
+# error "A C++ compiler has been selected for C."
+  ^
+1 error generated.
+
+
+Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+Compiler: /usr/bin/clang++ 
+Build flags: 
+Id flags:  
+
+The output was:
+1
+clang: warning: treating 'c' input as 'c++' when in C++ mode, this behavior is deprecated [-Wdeprecated]
+CMakeCCompilerId.c:2:3: error: "A C++ compiler has been selected for C."
+# error "A C++ compiler has been selected for C."
+  ^
+1 error generated.
+
+
+Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+Compiler: /usr/bin/clang++ 
+Build flags: 
+Id flags: -c 
+
+The output was:
+1
+clang: warning: treating 'c' input as 'c++' when in C++ mode, this behavior is deprecated [-Wdeprecated]
+CMakeCCompilerId.c:2:3: error: "A C++ compiler has been selected for C."
+# error "A C++ compiler has been selected for C."
+  ^
+1 error generated.
+
+
+Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+Compiler: /usr/bin/clang++ 
+Build flags: 
+Id flags: -Aa 
+
+The output was:
+1
+clang: warning: treating 'c' input as 'c++' when in C++ mode, this behavior is deprecated [-Wdeprecated]
+clang: warning: argument unused during compilation: '-Aa' [-Wunused-command-line-argument]
+CMakeCCompilerId.c:2:3: error: "A C++ compiler has been selected for C."
+# error "A C++ compiler has been selected for C."
+  ^
+1 error generated.
+
+
+Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+Compiler: /usr/bin/clang++ 
+Build flags: 
+Id flags: -D__CLASSIC_C__ 
+
+The output was:
+1
+clang: warning: treating 'c' input as 'c++' when in C++ mode, this behavior is deprecated [-Wdeprecated]
+CMakeCCompilerId.c:2:3: error: "A C++ compiler has been selected for C."
+# error "A C++ compiler has been selected for C."
+  ^
+CMakeCCompilerId.c:321:29: warning: ISO C++11 does not allow conversion from string literal to 'char *' [-Wwritable-strings]
+char const* info_compiler = "INFO" ":" "compiler[" COMPILER_ID "]";
+                            ^
+CMakeCCompilerId.c:614:29: warning: ISO C++11 does not allow conversion from string literal to 'char *' [-Wwritable-strings]
+char const* info_platform = "INFO" ":" "platform[" PLATFORM_ID "]";
+                            ^
+CMakeCCompilerId.c:615:25: warning: ISO C++11 does not allow conversion from string literal to 'char *' [-Wwritable-strings]
+char const* info_arch = "INFO" ":" "arch[" ARCHITECTURE_ID "]";
+                        ^
+CMakeCCompilerId.c:635:3: warning: ISO C++11 does not allow conversion from string literal to 'char *' [-Wwritable-strings]
+  "INFO" ":" "dialect_default[" C_DIALECT "]";
+  ^
+CMakeCCompilerId.c:643:10: error: unknown type name 'argc'
+int main(argc, argv) int argc; char *argv[];
+         ^
+CMakeCCompilerId.c:643:16: error: unknown type name 'argv'
+int main(argc, argv) int argc; char *argv[];
+               ^
+CMakeCCompilerId.c:643:21: error: expected ';' after top level declarator
+int main(argc, argv) int argc; char *argv[];
+                    ^
+                    ;
+CMakeCCompilerId.c:643:38: error: definition of variable with array type needs an explicit size or an initializer
+int main(argc, argv) int argc; char *argv[];
+                                     ^
+CMakeCCompilerId.c:647:1: error: expected unqualified-id
+{
+^
+4 warnings and 6 errors generated.
+
+
+Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+Compiler: /usr/bin/clang++ 
+Build flags: 
+Id flags: --target=arm-arm-none-eabi;-mcpu=cortex-m3 
+
+The output was:
+1
+clang: warning: treating 'c' input as 'c++' when in C++ mode, this behavior is deprecated [-Wdeprecated]
+CMakeCCompilerId.c:2:3: error: "A C++ compiler has been selected for C."
+# error "A C++ compiler has been selected for C."
+  ^
+1 error generated.
+
+
+Checking whether the C compiler is IAR using "" did not match "IAR .+ Compiler":
+clang: error: no input files
+Checking whether the C compiler is IAR using "" did not match "IAR .+ Compiler":
+clang: error: no input files
+Determining if the C compiler works failed with the following output:
+Change Dir: /home/th/Desktop/MyWebServer/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/make cmTC_e631e/fast && /usr/bin/make -f CMakeFiles/cmTC_e631e.dir/build.make CMakeFiles/cmTC_e631e.dir/build
+make[1]: Entering directory '/home/th/Desktop/MyWebServer/CMakeFiles/CMakeTmp'
+Building C object CMakeFiles/cmTC_e631e.dir/testCCompiler.c.o
+/usr/bin/clang++    -o CMakeFiles/cmTC_e631e.dir/testCCompiler.c.o   -c /home/th/Desktop/MyWebServer/CMakeFiles/CMakeTmp/testCCompiler.c
+clang: warning: treating 'c' input as 'c++' when in C++ mode, this behavior is deprecated [-Wdeprecated]
+/home/th/Desktop/MyWebServer/CMakeFiles/CMakeTmp/testCCompiler.c:2:3: error: "The CMAKE_C_COMPILER is set to a C++ compiler"
+# error "The CMAKE_C_COMPILER is set to a C++ compiler"
+  ^
+1 error generated.
+make[1]: *** [CMakeFiles/cmTC_e631e.dir/build.make:66: CMakeFiles/cmTC_e631e.dir/testCCompiler.c.o] Error 1
+make[1]: Leaving directory '/home/th/Desktop/MyWebServer/CMakeFiles/CMakeTmp'
+make: *** [Makefile:121: cmTC_e631e/fast] Error 2
+
+
+
