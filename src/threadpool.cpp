@@ -14,7 +14,9 @@ void ThreadPool::setepfd(int f){
 }
 
 void ThreadPool::tick(){
+    timer_mutex.lock();
     tw.tick();
+    timer_mutex.unlock();
 }
 
 void ThreadPool::add_timer(UserData data,int timeout){
@@ -80,7 +82,6 @@ void ThreadPool::run(){
         queue.pop_front();
         queue_mutex.unlock();
         int fd = event.data.fd;
-        //debug("thread %d get fd %d\n",gettid(),fd);
         if(event.events & EPOLLIN)
         {
             //because of oneshot of epoll_event,no need to use exclusive lock to call run of user_conn[fd].
@@ -96,7 +97,6 @@ void ThreadPool::run(){
             }
             int ret = user_conn[fd]->run();
             conn_mutex.unlock_shared();
-            debug("thread %d run user_conn fd %d returns %d\n",gettid(),fd,ret);
             if(ret == -1)
             {
                 end_connection(fd);

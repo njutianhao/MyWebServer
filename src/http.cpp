@@ -57,7 +57,7 @@ int HttpConnection::run(){
         else if(ret == 0)
         {
             disconnect = true;
-            debug("thread %d recv fd %d connection_end\n",gettid(),fd);
+            debug("recv told thread %d connection ends\n",gettid(),fd);
             break; // connection end
         }
         recv_index =recv_index + ret;

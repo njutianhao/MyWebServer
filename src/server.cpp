@@ -49,6 +49,7 @@ void Server::start_listen(){
     assert(ret >= 0);
     int flag = 1;
     setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag));
+    setsockopt(listenfd,SOL_SOCKET,SO_REUSEPORT,&flag,sizeof(flag));
     ret = listen(listenfd,backlog);
     assert(ret >= 0);
     epfd = epoll_create(5);
@@ -85,8 +86,14 @@ void Server::event_loop(){
                 while(1)
                 {
                     int connfd = accept(listenfd,(sockaddr *)&addr,(socklen_t *)&addrlen);
-                    if(connfd < 0)
+                    if(connfd == -1 && errno == EAGAIN)
                         break;
+                    else if(connfd <= 0)
+                    {
+                        perror("Error");
+                        return ;
+                    }
+                    debug("accept connect %d\n",connfd);
                     UserData data;
                     data.addr = addr;
                     data.socketfd = connfd;
@@ -113,6 +120,7 @@ void Server::event_loop(){
             }
             else if(event[i].events & (EPOLLHUP | EPOLLRDHUP | EPOLLERR))
             {
+                debug("epoll ends connect %d",event[i].data.fd);
                 tp.end_connection(event[i].data.fd);
             }
             else if(event[i].events & EPOLLIN)

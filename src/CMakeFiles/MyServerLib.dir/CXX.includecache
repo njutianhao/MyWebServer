@@ -6,9 +6,9 @@
 
 #IncludeRegexTransform: 
 
-/home/th/Desktop/MyWebServer/src/threadpool.cpp
-threadpool.h
-/home/th/Desktop/MyWebServer/src/threadpool.h
+/home/th/Desktop/MyWebServer/src/server.cpp
+server.h
+/home/th/Desktop/MyWebServer/src/server.h
 
 include/http.h
 sys/socket.h
@@ -54,6 +54,38 @@ thread
 mutex
 -
 condition_variable
+-
+
+include/server.h
+sys/socket.h
+-
+netinet/in.h
+-
+string.h
+-
+assert.h
+-
+sys/epoll.h
+-
+fcntl.h
+-
+errno.h
+-
+stdio.h
+-
+map
+-
+unistd.h
+-
+signal.h
+-
+threadpool.h
+include/threadpool.h
+http.h
+include/http.h
+sys/types.h
+-
+bits/signum.h
 -
 
 include/threadpool.h
