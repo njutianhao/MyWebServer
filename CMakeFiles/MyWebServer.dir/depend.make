@@ -3,6 +3,7 @@
 
 CMakeFiles/MyWebServer.dir/main.cpp.o: main.cpp
 CMakeFiles/MyWebServer.dir/main.cpp.o: include/http.h
+CMakeFiles/MyWebServer.dir/main.cpp.o: include/sem.h
 CMakeFiles/MyWebServer.dir/main.cpp.o: include/server.h
 CMakeFiles/MyWebServer.dir/main.cpp.o: include/threadpool.h
 CMakeFiles/MyWebServer.dir/main.cpp.o: include/timer.h

@@ -26,13 +26,13 @@ public:
 };
 class TimerWheel{
 private:
-    std::list<Timer> slots[SLOT_NUM];
+    std::list<Timer *> slots[SLOT_NUM];
     int current;
     ThreadPool *tp;
 public:
     TimerWheel(ThreadPool *);
-    std::list<Timer>::iterator add_timer(UserData data,int timeout);
-    void remove_timer(std::list<Timer>::iterator it);
+    std::list<Timer *>::iterator add_timer(UserData data,int timeout);
+    void remove_timer(std::list<Timer *>::iterator it);
     void tick();
 };
 #endif

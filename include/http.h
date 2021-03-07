@@ -19,6 +19,12 @@
 #include<assert.h>
 #define HTTP_BUFF_SIZE 1024
 #define FILE_PATH_SIZE 256
+#define DEBUG
+#ifdef DEBUG
+#define debug(format, args...) fprintf(stderr, format, args)
+#else
+#define debug(format, args...) 
+#endif
 class HttpConnection{
 private:
 enum ParseState{
@@ -26,6 +32,7 @@ enum ParseState{
         PARSE_HEADER,
         PARSE_CONTENT,
     };
+    bool disconnect;
     int fd;
     char buff[HTTP_BUFF_SIZE];
     char send_buff_header[HTTP_BUFF_SIZE];
@@ -51,7 +58,6 @@ enum ParseState{
     std::map<std::string,std::string> params;
     std::vector<std::string> split(char *,char,bool,bool);
 public:
-    std::mutex mutex;
     void set_keepalive();
     HttpConnection(int);
     void init();

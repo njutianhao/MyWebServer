@@ -46,6 +46,16 @@ iostream
 assert.h
 -
 
+include/sem.h
+iostream
+-
+thread
+-
+mutex
+-
+condition_variable
+-
+
 include/server.h
 sys/socket.h
 -
@@ -101,6 +111,10 @@ assert.h
 -
 mutex
 -
+shared_mutex
+-
+sem.h
+include/sem.h
 
 include/timer.h
 netinet/in.h

@@ -6,17 +6,20 @@ src/CMakeFiles/MyServerLib.dir/http.cpp.o: include/http.h
 
 src/CMakeFiles/MyServerLib.dir/server.cpp.o: src/server.cpp
 src/CMakeFiles/MyServerLib.dir/server.cpp.o: include/http.h
+src/CMakeFiles/MyServerLib.dir/server.cpp.o: include/sem.h
 src/CMakeFiles/MyServerLib.dir/server.cpp.o: include/server.h
 src/CMakeFiles/MyServerLib.dir/server.cpp.o: include/threadpool.h
 src/CMakeFiles/MyServerLib.dir/server.cpp.o: include/timer.h
 
 src/CMakeFiles/MyServerLib.dir/threadpool.cpp.o: src/threadpool.cpp
 src/CMakeFiles/MyServerLib.dir/threadpool.cpp.o: include/http.h
+src/CMakeFiles/MyServerLib.dir/threadpool.cpp.o: include/sem.h
 src/CMakeFiles/MyServerLib.dir/threadpool.cpp.o: include/threadpool.h
 src/CMakeFiles/MyServerLib.dir/threadpool.cpp.o: include/timer.h
 
 src/CMakeFiles/MyServerLib.dir/timer.cpp.o: src/timer.cpp
 src/CMakeFiles/MyServerLib.dir/timer.cpp.o: include/http.h
+src/CMakeFiles/MyServerLib.dir/timer.cpp.o: include/sem.h
 src/CMakeFiles/MyServerLib.dir/timer.cpp.o: include/threadpool.h
 src/CMakeFiles/MyServerLib.dir/timer.cpp.o: include/timer.h
 

@@ -4,6 +4,7 @@
 CMakeFiles/MyWebServer.dir/main.cpp.o
  /home/th/Desktop/MyWebServer/main.cpp
  include/http.h
+ include/sem.h
  include/server.h
  include/threadpool.h
  include/timer.h

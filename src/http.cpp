@@ -12,6 +12,7 @@ HttpConnection::HttpConnection(int f){
     //strcpy(file_path_prefix,"/home/th/Desktop/MyWebServer/root/");
     file_path_prefix_length = strlen(file_path_prefix);
     keepalive = false;
+    disconnect = false;
     file_fd = -1;
     file_size = 0;
     memset(buff,0,HTTP_BUFF_SIZE);
@@ -46,7 +47,7 @@ int HttpConnection::run(){
         {
             if(errno == EAGAIN || errno == EWOULDBLOCK)
             {
-                break; // read again
+                break; //read again
             }
             else   
             {
@@ -55,7 +56,9 @@ int HttpConnection::run(){
         }
         else if(ret == 0)
         {
-            return -1; // connection end
+            disconnect = true;
+            debug("thread %d recv fd %d connection_end\n",gettid(),fd);
+            break; // connection end
         }
         recv_index =recv_index + ret;
     }
@@ -68,7 +71,10 @@ int HttpConnection::run(){
     switch(ret){
         case -2: create_404_response();break;
         case -1: create_400_response();break;
-        case 0:return 0;
+        case 0:
+            if(!disconnect) 
+                return 0;
+            return -1;
         case 1: create_200_response();break;
         default:create_400_response();
     }
@@ -100,6 +106,7 @@ int HttpConnection::parse(){
     std::size_t i = 0;
     while(i != vec.size())
     {
+        //debug("thread %d parse fd %d :%s\n",gettid(),fd,vec[i].c_str());
         switch(state){
         case PARSE_REQUEST:
             strncpy(tmp,vec[i].c_str(),vec[i].size() - 1);
@@ -150,7 +157,6 @@ int HttpConnection::parse(){
                 int pos = vec[i].find(':');
                 if(pos != std::string::npos)
                 {
-                    std::cout << "debug:"<<vec[i].substr(0,pos)<<"|"<<vec[i].substr(pos+2,vec[i].size() - pos) <<std::endl;
                     headers[vec[i].substr(0,pos)] = vec[i].substr(pos+2,vec[i].size() - pos);
                     parse_index += vec[i].size();
                     i++;
@@ -165,10 +171,7 @@ int HttpConnection::parse(){
             current_content_size += vec[i].size();
             i++;
             if(current_content_size >= content_size)
-            {
-                parse_index += vec[i].size();
                 return 1;
-            }
             break;
         default:
             return -1;
@@ -183,7 +186,7 @@ void HttpConnection::create_404_response(){
 HTTP/1.1 404 Not Found\r\n\
 Content-Length: %ld\r\n\
 Connection: %s\r\n\
-\r\n",sizeof(send_buff_content),"close");
+\r\n",sizeof(send_buff_content),keepalive?"keep-alive":"close");
     iov[0].iov_base = send_buff_header;
     iov[0].iov_len = strlen(send_buff_header);
     iov[1].iov_base = send_buff_content;
@@ -196,7 +199,7 @@ void HttpConnection::create_400_response(){
 HTTP/1.1 400 Bad Request\r\n\
 Content-Length: %ld\r\n\
 Connection: %s\r\n\
-\r\n",sizeof(send_buff_content),"close");
+\r\n",sizeof(send_buff_content),keepalive?"keep-alive":"close");
     iov[0].iov_base = send_buff_header;
     iov[0].iov_len = strlen(send_buff_header);
     iov[1].iov_base = send_buff_content;
@@ -208,14 +211,13 @@ void HttpConnection::create_200_response(){
 HTTP/1.1 200 OK\r\n\
 Content-Length: %ld\r\n\
 Connection: %s\r\n\
-\r\n",file_size,keepalive==true?"keep-alive":"close");
+\r\n",file_size,keepalive?"keep-alive":"close");
     iov[0].iov_base = send_buff_header;
     iov[0].iov_len = strlen(send_buff_header);
     mmaped = true;
     mapaddr = mmap(NULL,file_size,PROT_READ,MAP_PRIVATE,file_fd,0);
     iov[1].iov_base = mapaddr;
     iov[1].iov_len = file_size;
-    std::cout << "debug:"<< iov[1].iov_base << " " << iov[1].iov_len << std::endl;
 }
 
 void HttpConnection::set_keepalive(){
@@ -236,10 +238,7 @@ int HttpConnection::send(){
                 if(mmaped)
                 {
                     mmaped = false;
-                    if(munmap(mapaddr,file_size)==-1)
-                    {
-                        perror("Error");
-                    }
+                    assert(munmap(mapaddr,file_size)==0);
                 }
                 return -1;
             }
@@ -266,7 +265,7 @@ int HttpConnection::send(){
         mmaped = false;
         assert(munmap(mapaddr,file_size)==0);
     }
-    if(!keepalive)
+    if(!keepalive || disconnect)
         return -1;
     else
     {

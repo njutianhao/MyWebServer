@@ -6,21 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/home/th/Desktop/MyWebServer/src/http.cpp
-http.h
-/home/th/Desktop/MyWebServer/src/http.h
-
-/home/th/Desktop/MyWebServer/src/server.cpp
-server.h
-/home/th/Desktop/MyWebServer/src/server.h
-
 /home/th/Desktop/MyWebServer/src/threadpool.cpp
-threadpool.h
-/home/th/Desktop/MyWebServer/src/threadpool.h
-
-/home/th/Desktop/MyWebServer/src/timer.cpp
-timer.h
-/home/th/Desktop/MyWebServer/src/timer.h
 threadpool.h
 /home/th/Desktop/MyWebServer/src/threadpool.h
 
@@ -60,36 +46,14 @@ iostream
 assert.h
 -
 
-include/server.h
-sys/socket.h
+include/sem.h
+iostream
 -
-netinet/in.h
+thread
 -
-string.h
+mutex
 -
-assert.h
--
-sys/epoll.h
--
-fcntl.h
--
-errno.h
--
-stdio.h
--
-map
--
-unistd.h
--
-signal.h
--
-threadpool.h
-include/threadpool.h
-http.h
-include/http.h
-sys/types.h
--
-bits/signum.h
+condition_variable
 -
 
 include/threadpool.h
@@ -115,6 +79,10 @@ assert.h
 -
 mutex
 -
+shared_mutex
+-
+sem.h
+include/sem.h
 
 include/timer.h
 netinet/in.h
