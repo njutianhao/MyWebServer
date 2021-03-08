@@ -239,6 +239,7 @@ int HttpConnection::send(){
                 {
                     mmaped = false;
                     assert(munmap(mapaddr,file_size)==0);
+                    close(file_fd);
                 }
                 return -1;
             }
@@ -264,6 +265,7 @@ int HttpConnection::send(){
     {
         mmaped = false;
         assert(munmap(mapaddr,file_size)==0);
+        close(file_fd);
     }
     if(!keepalive || disconnect)
         return -1;

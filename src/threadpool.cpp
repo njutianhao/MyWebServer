@@ -50,7 +50,11 @@ void ThreadPool::end_connection(int fd){
     epoll_ctl(epfd,EPOLL_CTL_DEL,fd,NULL);
     remove_timer(fd);
     remove_user_connection(fd);
-    close(fd);
+    if(close(fd) != 0)
+    {
+        perror("Error");
+        assert(0);
+    }
 }
 
 void ThreadPool::append(epoll_event event){

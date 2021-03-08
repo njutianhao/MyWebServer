@@ -19,7 +19,6 @@
 #include<assert.h>
 #define HTTP_BUFF_SIZE 1024
 #define FILE_PATH_SIZE 256
-#define DEBUG
 #ifdef DEBUG
 #define debug(format, args...) fprintf(stderr, format, args)
 #else

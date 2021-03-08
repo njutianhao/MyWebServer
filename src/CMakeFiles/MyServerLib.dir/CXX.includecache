@@ -6,9 +6,23 @@
 
 #IncludeRegexTransform: 
 
+/home/th/Desktop/MyWebServer/src/http.cpp
+http.h
+/home/th/Desktop/MyWebServer/src/http.h
+
 /home/th/Desktop/MyWebServer/src/server.cpp
 server.h
 /home/th/Desktop/MyWebServer/src/server.h
+
+/home/th/Desktop/MyWebServer/src/threadpool.cpp
+threadpool.h
+/home/th/Desktop/MyWebServer/src/threadpool.h
+
+/home/th/Desktop/MyWebServer/src/timer.cpp
+timer.h
+/home/th/Desktop/MyWebServer/src/timer.h
+threadpool.h
+/home/th/Desktop/MyWebServer/src/threadpool.h
 
 include/http.h
 sys/socket.h
