@@ -1,2 +1,0 @@
-/usr/bin/ar qc libMyServerLib.a  CMakeFiles/MyServerLib.dir/http.cpp.o CMakeFiles/MyServerLib.dir/server.cpp.o CMakeFiles/MyServerLib.dir/threadpool.cpp.o CMakeFiles/MyServerLib.dir/timer.cpp.o
-/usr/bin/ranlib libMyServerLib.a

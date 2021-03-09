@@ -14,13 +14,13 @@ public:
         count = value;
     }
     void wait(){
-        std::unique_lock<std::mutex> lck(mutex);
+        std::unique_lock<std::mutex> lock(mutex);
         if(--count < 0)
-            cv.wait(lck);
+            cv.wait(lock);
     }
  
     void post(){
-        std::unique_lock<std::mutex> lck(mutex);
+        std::unique_lock<std::mutex> lock(mutex);
         if(++count <= 0)
             cv.notify_one();
     }

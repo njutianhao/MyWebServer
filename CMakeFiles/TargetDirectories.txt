@@ -1,6 +1,0 @@
-/home/th/Desktop/MyWebServer/CMakeFiles/rebuild_cache.dir
-/home/th/Desktop/MyWebServer/CMakeFiles/edit_cache.dir
-/home/th/Desktop/MyWebServer/CMakeFiles/MyWebServer.dir
-/home/th/Desktop/MyWebServer/src/CMakeFiles/rebuild_cache.dir
-/home/th/Desktop/MyWebServer/src/CMakeFiles/edit_cache.dir
-/home/th/Desktop/MyWebServer/src/CMakeFiles/MyServerLib.dir

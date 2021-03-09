@@ -55,8 +55,9 @@ void ThreadPool::end_connection(int fd){
 }
 
 void ThreadPool::append(epoll_event event){
-    std::lock_guard<std::mutex> lock(queue_mutex);
+    queue_mutex.lock();
     queue.push_back(event);
+    queue_mutex.unlock();
     sem.post();
 }
 
