@@ -33,4 +33,4 @@
 
 > webbench -c 10000 -t 10 http://localhost:2132/
 
-![BVG@K$Q]946}VIEY%0HQJK4](C:\Users\th\Desktop\BVG@K$Q]946}VIEY%0HQJK4.png)
+[![63XjNF.png](https://s3.ax1x.com/2021/03/09/63XjNF.png)](https://imgtu.com/i/63XjNF)
