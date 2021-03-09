@@ -35,6 +35,14 @@ void Server::sighandler(int sig){
 Server::Server(){
 }
 
+Server::Server(int p){
+    port = p;
+}
+
+void Server::set_port(int p){
+    port = p;
+}
+
 void Server::start_listen(){
     listenfd = socket(PF_INET,SOCK_STREAM,0);
     assert(listenfd >= 0);
@@ -120,7 +128,6 @@ void Server::event_loop(){
             }
             else if(event[i].events & (EPOLLHUP | EPOLLRDHUP | EPOLLERR))
             {
-                debug("epoll ends connect %d",event[i].data.fd);
                 tp.end_connection(event[i].data.fd);
             }
             else if(event[i].events & EPOLLIN)

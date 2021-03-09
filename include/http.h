@@ -31,7 +31,6 @@ enum ParseState{
         PARSE_HEADER,
         PARSE_CONTENT,
     };
-    bool disconnect;
     int fd;
     char buff[HTTP_BUFF_SIZE];
     char send_buff_header[HTTP_BUFF_SIZE];
@@ -43,7 +42,6 @@ enum ParseState{
     char file_path_prefix[FILE_PATH_SIZE];
     int file_path_prefix_length;
     off_t file_size;
-    int file_fd;
     bool keepalive;
     bool mmaped;
     void *mapaddr;

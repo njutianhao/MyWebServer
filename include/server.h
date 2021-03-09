@@ -19,7 +19,7 @@
 #define TIMEOUT_VAL 30
 class Server{
 private:
-    const int port = 2132;
+    int port = 2132;
     const int backlog = 5;
     int listenfd;
     int epfd;
@@ -28,6 +28,8 @@ private:
     ThreadPool tp;
 public:
     Server();
+    Server(int);
+    void set_port(int);
     void start_listen();
     void event_loop();
     static void sighandler(int sig);

@@ -14,25 +14,22 @@ void ThreadPool::setepfd(int f){
 }
 
 void ThreadPool::tick(){
-    timer_mutex.lock();
+    std::lock_guard<std::mutex> lock(tw_member_mutex);
     tw.tick();
-    timer_mutex.unlock();
 }
 
 void ThreadPool::add_timer(UserData data,int timeout){
-    timer_mutex.lock();
+    std::lock_guard<std::mutex> lock(timer_mutex);
     user_timer.insert(std::pair<int,std::list<Timer *>::iterator>(data.socketfd,tw.add_timer(data,timeout)));
-    timer_mutex.unlock();
 }
 
 void ThreadPool::remove_timer(int fd){
-    timer_mutex.lock();
+    std::lock_guard<std::mutex> lock(timer_mutex);
     if(user_timer.find(fd) != user_timer.end())
     {
         tw.remove_timer(user_timer[fd]);
         user_timer.erase(fd);
     }
-    timer_mutex.unlock();
 }
 
 void ThreadPool::remove_user_connection(int fd){
@@ -58,17 +55,15 @@ void ThreadPool::end_connection(int fd){
 }
 
 void ThreadPool::append(epoll_event event){
-    queue_mutex.lock();
+    std::lock_guard<std::mutex> lock(queue_mutex);
     queue.push_back(event);
     sem.post();
-    queue_mutex.unlock();
 }
 
 void ThreadPool::adjust_timer(int fd){
-    timer_mutex.lock();
+    std::lock_guard<std::mutex> lock(tw_member_mutex);
     if(user_timer.find(fd) != user_timer.end() && *user_timer[fd] != NULL)
         (**user_timer[fd]).rotation_plus();
-    timer_mutex.unlock();
 }
 
 void * ThreadPool::start_routine(void *p){
@@ -131,7 +126,7 @@ void ThreadPool::run(){
             }
             int ret = (*user_conn[fd]).send();
             conn_mutex.unlock_shared();
-            debug("thread %d send data to fd %d returns %d\n",gettid(),fd,ret);
+            //debug("thread %d send data to fd %d returns %d\n",gettid(),fd,ret);
             if(ret == -1)
             {
                 end_connection(fd);

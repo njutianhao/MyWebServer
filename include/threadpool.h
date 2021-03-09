@@ -20,7 +20,8 @@ private:
     int epfd;
     std::thread threads[THREAD_NUM];
     std::mutex queue_mutex;
-    std::shared_mutex timer_mutex;
+    std::mutex timer_mutex;
+    std::mutex tw_member_mutex;
     std::shared_mutex conn_mutex;
     semaphore sem;
     TimerWheel tw;

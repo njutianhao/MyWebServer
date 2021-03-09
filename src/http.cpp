@@ -12,8 +12,6 @@ HttpConnection::HttpConnection(int f){
     //strcpy(file_path_prefix,"/home/th/Desktop/MyWebServer/root/");
     file_path_prefix_length = strlen(file_path_prefix);
     keepalive = false;
-    disconnect = false;
-    file_fd = -1;
     file_size = 0;
     memset(buff,0,HTTP_BUFF_SIZE);
 }
@@ -56,9 +54,7 @@ int HttpConnection::run(){
         }
         else if(ret == 0)
         {
-            disconnect = true;
-            debug("recv told thread %d connection ends\n",gettid(),fd);
-            break; // connection end
+            return -1;
         }
         recv_index =recv_index + ret;
     }
@@ -71,10 +67,7 @@ int HttpConnection::run(){
     switch(ret){
         case -2: create_404_response();break;
         case -1: create_400_response();break;
-        case 0:
-            if(!disconnect) 
-                return 0;
-            return -1;
+        case 0:return 0;
         case 1: create_200_response();break;
         default:create_400_response();
     }
@@ -94,8 +87,8 @@ void HttpConnection::adjust_buff(){
     state = PARSE_REQUEST;
     current_content_size = 0;
     content_size = 0;
-    file_fd = -1;
     file_size = 0;
+    mmaped = false;
 }
 
 // 400:-1 404:-2 again:0 finish:1
@@ -187,10 +180,6 @@ HTTP/1.1 404 Not Found\r\n\
 Content-Length: %ld\r\n\
 Connection: %s\r\n\
 \r\n",sizeof(send_buff_content),keepalive?"keep-alive":"close");
-    iov[0].iov_base = send_buff_header;
-    iov[0].iov_len = strlen(send_buff_header);
-    iov[1].iov_base = send_buff_content;
-    iov[1].iov_len = strlen(send_buff_content);
 }
 
 void HttpConnection::create_400_response(){
@@ -200,10 +189,6 @@ HTTP/1.1 400 Bad Request\r\n\
 Content-Length: %ld\r\n\
 Connection: %s\r\n\
 \r\n",sizeof(send_buff_content),keepalive?"keep-alive":"close");
-    iov[0].iov_base = send_buff_header;
-    iov[0].iov_len = strlen(send_buff_header);
-    iov[1].iov_base = send_buff_content;
-    iov[1].iov_len = strlen(send_buff_content);
 }
 
 void HttpConnection::create_200_response(){
@@ -212,12 +197,6 @@ HTTP/1.1 200 OK\r\n\
 Content-Length: %ld\r\n\
 Connection: %s\r\n\
 \r\n",file_size,keepalive?"keep-alive":"close");
-    iov[0].iov_base = send_buff_header;
-    iov[0].iov_len = strlen(send_buff_header);
-    mmaped = true;
-    mapaddr = mmap(NULL,file_size,PROT_READ,MAP_PRIVATE,file_fd,0);
-    iov[1].iov_base = mapaddr;
-    iov[1].iov_len = file_size;
 }
 
 void HttpConnection::set_keepalive(){
@@ -226,6 +205,18 @@ void HttpConnection::set_keepalive(){
 }
 
 int HttpConnection::send(){
+    iov[0].iov_base = send_buff_header;
+    iov[0].iov_len = strlen(send_buff_header);
+    if(mmaped)
+    {
+        iov[1].iov_base = mapaddr;
+        iov[1].iov_len = file_size;
+    }
+    else
+    {
+        iov[1].iov_base = send_buff_content;
+        iov[1].iov_len = strlen(send_buff_content);
+    }
     while(1)
     {
         int ret = writev(fd,iov,2);
@@ -239,7 +230,6 @@ int HttpConnection::send(){
                 {
                     mmaped = false;
                     assert(munmap(mapaddr,file_size)==0);
-                    close(file_fd);
                 }
                 return -1;
             }
@@ -265,9 +255,8 @@ int HttpConnection::send(){
     {
         mmaped = false;
         assert(munmap(mapaddr,file_size)==0);
-        close(file_fd);
     }
-    if(!keepalive || disconnect)
+    if(!keepalive)
         return -1;
     else
     {
@@ -289,10 +278,13 @@ int HttpConnection::process(){
         struct stat file_stat;
         if(stat(file_path,&file_stat) < 0)
             return -2;
-        file_fd = open(file_path,O_RDONLY);
+        int file_fd = open(file_path,O_RDONLY);
         if(file_fd == -1)
             return -2; 
+        mmaped = true;
         file_size = file_stat.st_size;
+        mapaddr = mmap(NULL,file_size,PROT_READ,MAP_PRIVATE,file_fd,0);
+        close(file_fd);
         return 1;
     }
     else
